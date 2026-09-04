@@ -136,6 +136,9 @@ export const WHATSAPP_LINK = buildWhatsAppLink(); // dynamic but with no params
 
 export const PHONE_LINK = `tel:+${BRAND.phoneIntl}`;
 
+export const GOOGLE_SHEETS_FORM_ENDPOINT =
+  "https://script.google.com/macros/s/AKfycbxXQCxEkP2mpRJokCdby1uMISjRq_h5LHbHvHUZguKXTcoHqTM_F8szhs6t1DS4f5Wwog/exec";
+
 // ─── Google Maps ────────────────────────────────────────────────────────
 // B.R Plaza, CMR Main Rd, HRBR Layout 2nd Block, Kalyan Nagar, Bengaluru
 // Coordinates for the exact store location (more reliable than address query).
