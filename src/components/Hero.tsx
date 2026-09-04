@@ -58,18 +58,18 @@ export default function Hero() {
     setSubmitError("");
 
     try {
-      const formData = new URLSearchParams({
+      const bookingData = {
         device,
         issue,
         mobile,
         pincode,
-      });
+      };
 
       await fetch(GOOGLE_SHEETS_FORM_ENDPOINT, {
         method: "POST",
         mode: "no-cors",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: formData.toString(),
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify(bookingData),
       });
 
       setReserved(true);
