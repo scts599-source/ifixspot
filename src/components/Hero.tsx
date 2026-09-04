@@ -65,12 +65,14 @@ export default function Hero() {
         pincode,
       };
 
-      await fetch(GOOGLE_SHEETS_FORM_ENDPOINT, {
-        method: "POST",
-        mode: "no-cors",
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify(bookingData),
-      });
+      const queued = navigator.sendBeacon(
+        GOOGLE_SHEETS_FORM_ENDPOINT,
+        new Blob([JSON.stringify(bookingData)], { type: "text/plain" }),
+      );
+
+      if (!queued) {
+        throw new Error("The booking could not be queued");
+      }
 
       setReserved(true);
     } catch {
