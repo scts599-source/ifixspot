@@ -6,7 +6,9 @@ import App from "./App";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <BrowserRouter basename="/ifixspot">
+    <BrowserRouter
+      basename={window.location.pathname.startsWith("/ifixspot") ? "/ifixspot" : "/"}
+    >
       <App />
     </BrowserRouter>
   </StrictMode>

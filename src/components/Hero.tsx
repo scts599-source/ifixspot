@@ -3,7 +3,7 @@ import { motion, type Variants } from "framer-motion";
 import { Star, ShieldCheck, Clock, Check, Phone, ChevronDown } from "lucide-react";
 import heroPhone from "@/assets/hero-phone.jpg";
 import { Pill } from "@/components/ui";
-import { BRAND, GOOGLE_SHEETS_FORM_ENDPOINT, PHONE_LINK } from "@/lib/site";
+import { BRAND, PHONE_LINK } from "@/lib/site";
 
 // ─── Types ───────────────────────────────────────────────────────────────
 type DeviceSeries = "" | "iOS 12 Series" | "iOS 13 Series" | "iOS 14 Series" | "iOS 15 Series" | "iOS 16 Series" | "iOS 17 Series";
@@ -34,8 +34,6 @@ export default function Hero() {
   const [pincode, setPincode] = useState("");
   const [errors, setErrors] = useState<{ mobile?: string; pincode?: string }>({});
   const [reserved, setReserved] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [submitError, setSubmitError] = useState("");
 
   const canSubmit = useMemo(
     () => device && issue && mobile.length === 10 && pincode.length >= 4,
@@ -50,33 +48,10 @@ export default function Hero() {
     return Object.keys(next).length === 0;
   }
 
-  async function handleSubmit(e: React.FormEvent) {
+  function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!validate()) return;
-
-    setSubmitting(true);
-    setSubmitError("");
-
-    try {
-      const bookingData = {
-        device,
-        issue,
-        mobile,
-        pincode,
-      };
-
-      await fetch(GOOGLE_SHEETS_FORM_ENDPOINT, {
-        method: "POST",
-        mode: "no-cors",
-        body: JSON.stringify(bookingData),
-      });
-
-      setReserved(true);
-    } catch {
-      setSubmitError("Unable to submit right now. Please try again.");
-    } finally {
-      setSubmitting(false);
-    }
+    setReserved(true);
   }
 
   return (
@@ -223,19 +198,13 @@ export default function Hero() {
                   {/* Submit */}
                   <button
                     type="submit"
-                    disabled={!canSubmit || submitting}
+                    disabled={!canSubmit}
                     className="group mt-1 flex w-full items-center justify-center gap-2 rounded-xl bg-red-600 px-5 py-3.5 text-[15px] font-bold text-white shadow-lg shadow-red-600/30 transition-all hover:bg-red-700 hover:shadow-xl hover:shadow-red-600/40 active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-zinc-200 disabled:text-zinc-500 disabled:shadow-none"
                   >
-                    <span>{submitting ? "..." : "⚡"}</span>
-                    {submitting ? "Submitting..." : "Check Price & Dispatch Technician"}
+                    <span>⚡</span>
+                    Check Price & Dispatch Technician
                   </button>
                 </div>
-
-                {submitError && (
-                  <p role="alert" className="mt-3 text-center text-xs text-red-600">
-                    {submitError}
-                  </p>
-                )}
 
                 <p className="mt-4 flex items-center justify-center gap-1.5 text-xs text-zinc-400">
                   <Lock className="h-3 w-3" />
