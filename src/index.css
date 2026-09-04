@@ -1,0 +1,112 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Plus Jakarta Sans", "Inter", ui-sans-serif, system-ui,
+    sans-serif;
+
+  --color-ink: #0b0b0d;
+  --color-ink-soft: #1a1a1f;
+
+  --color-wa: #25d366;
+  --color-wa-dark: #1da851;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background-color: #ffffff;
+    color: var(--color-ink);
+  }
+
+  ::selection {
+    background-color: #0b0b0d;
+    color: #ffffff;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #f4f4f5;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #c9c9cf;
+    border-radius: 999px;
+    border: 2px solid #f4f4f5;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #a1a1aa;
+  }
+}
+
+@layer utilities {
+  .font-display {
+    font-family: var(--font-display);
+  }
+
+  /* Soft grid / dotted texture for premium backgrounds */
+  .bg-dot-grid {
+    background-image: radial-gradient(
+      rgba(0, 0, 0, 0.045) 1px,
+      transparent 1px
+    );
+    background-size: 22px 22px;
+  }
+
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .marquee-track {
+    animation: marquee 32s linear infinite;
+  }
+
+  @keyframes marquee {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(-50%);
+    }
+  }
+
+  /* Pulsing red ring for the "Tap to Call" CTA */
+  @keyframes pulse-red {
+    0% {
+      box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.55);
+    }
+    70% {
+      box-shadow: 0 0 0 22px rgba(220, 38, 38, 0);
+    }
+    100% {
+      box-shadow: 0 0 0 0 rgba(220, 38, 38, 0);
+    }
+  }
+
+  .pulse-red {
+    animation: pulse-red 1.8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  .pulse-red-strong {
+    animation: pulse-red 1.3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .marquee-track,
+    .pulse-red,
+    .pulse-red-strong {
+      animation: none;
+    }
+    html {
+      scroll-behavior: auto;
+    }
+  }
+}
