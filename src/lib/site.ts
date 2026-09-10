@@ -1,6 +1,9 @@
 // ─── Brand & Contact Config ─────────────────────────────────────────────
 // Update these values in one place to change them across the whole site.
 
+export const GOOGLE_SHEET_WEBHOOK_URL =
+  "https://script.google.com/macros/s/AKfycbz4el5pYb08nl9NFJVKd2tgCa5thFp0BmU64I9KCXQq1C6FHKwy-FuE4L4TK1wfiDPl0g/exec";
+
 export const BRAND = {
   name: "iFixSpot",
     tagline: "Physical iOS Device Care & Device Center",

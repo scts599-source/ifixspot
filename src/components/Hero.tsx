@@ -3,7 +3,7 @@ import { motion, type Variants } from "framer-motion";
 import { Star, ShieldCheck, Clock, Check, Phone, ChevronDown, Lock } from "lucide-react";
 import heroPhone from "@/assets/hero-phone.jpg";
 import { Pill } from "@/components/ui";
-import { BRAND, PHONE_LINK } from "@/lib/site";
+import { BRAND, GOOGLE_SHEET_WEBHOOK_URL, PHONE_LINK } from "@/lib/site";
 
 // ─── Types ───────────────────────────────────────────────────────────────
 type DeviceSeries = "" | "iPhone 17 Series" | "iPhone 16 Series" | "iPhone 15 Series" | "iPhone 14 Series" | "iPhone 13 Series" | "iPhone 12 Series" | "iPhone 11 Series" | "iPhone XS / XS Max" | "Other iOS Device";
@@ -34,6 +34,7 @@ export default function Hero() {
   const [pincode, setPincode] = useState("");
   const [errors, setErrors] = useState<{ mobile?: string; pincode?: string }>({});
   const [reserved, setReserved] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const canSubmit = useMemo(
     () => device && issue && mobile.length === 10 && pincode.length >= 4,
@@ -48,10 +49,33 @@ export default function Hero() {
     return Object.keys(next).length === 0;
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!validate()) return;
-    setReserved(true);
+
+    setIsSubmitting(true);
+
+    try {
+      await fetch(GOOGLE_SHEET_WEBHOOK_URL, {
+        method: "POST",
+        mode: "no-cors",
+        headers: {
+          "Content-Type": "text/plain;charset=utf-8",
+        },
+        body: JSON.stringify({
+          device,
+          issue,
+          mobile,
+          pincode,
+          source: "Hero Booking Form",
+        }),
+      });
+    } catch (err) {
+      console.error("Webhook error:", err);
+    } finally {
+      setIsSubmitting(false);
+      setReserved(true);
+    }
   }
 
   return (
@@ -194,11 +218,23 @@ export default function Hero() {
                   {/* Submit */}
                   <button
                     type="submit"
-                    disabled={!canSubmit}
+                    disabled={!canSubmit || isSubmitting}
                     className="group mt-1 flex w-full items-center justify-center gap-2 rounded-xl bg-red-600 px-5 py-3.5 text-[15px] font-bold text-white shadow-lg shadow-red-600/30 transition-all hover:bg-red-700 hover:shadow-xl hover:shadow-red-600/40 active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-zinc-200 disabled:text-zinc-500 disabled:shadow-none"
                   >
-                    <span>⚡</span>
-                    Check Availability & Dispatch Specialist
+                    {isSubmitting ? (
+                      <span className="inline-flex items-center gap-2">
+                        <svg className="h-4 w-4 animate-spin text-white" viewBox="0 0 24 24" fill="none">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Securing Slot...
+                      </span>
+                    ) : (
+                      <>
+                        <span>⚡</span>
+                        Check Price &amp; Dispatch Technician
+                      </>
+                    )}
                   </button>
                 </div>
 
