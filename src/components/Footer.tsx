@@ -12,7 +12,7 @@ const SERVICES = [
   "Rear Glass Replacement",
   "Camera Module Service",
   "Charging Port Replacement",
-  "Physical Hardware Diagnostics",
+  "Physical Device Diagnostics",
 ];
 
 export default function Footer() {
@@ -134,12 +134,15 @@ export default function Footer() {
         <div className="mx-auto w-full max-w-6xl sm:px-4">
           <p className="leading-relaxed">
             <strong className="text-zinc-200">Explicit Walk-In &amp; Hardware Notice:</strong>{" "}
-            iFixSpot is a physical, local walk-in facility and on-site hardware maintenance center. We strictly perform physical hardware replacement and component diagnostics. WE DO NOT PROVIDE REMOTE DESKTOP ACCESS, ONLINE SOFTWARE TROUBLESHOOTING, ICLOUD BYPASS, PASSCODE EXTRACTION, OR DIGITAL UNLOCKING SERVICES. All operations are conducted in person by our trained technicians either at our Kalyan Nagar laboratory or directly in front of the customer during on-demand doorstep visits.
+            iFixSpot is a physical walk-in facility and on-site hardware maintenance center. We strictly perform physical hardware replacement and component diagnostics. WE DO NOT PROVIDE REMOTE DESKTOP ACCESS, ONLINE SOFTWARE TROUBLESHOOTING, ICLOUD BYPASS, PASSCODE EXTRACTION, OR DIGITAL UNLOCKING SERVICES. All operations are conducted in person by our trained technicians at our Bangalore store or directly in front of the customer during on-demand doorstep visits.
           </p>
           <p className="mt-3 leading-relaxed">
             <strong className="text-zinc-200">Trademark Disclaimer:</strong>{" "}
-            iFixSpot is an independent service center providing replacement parts and local hardware services for Apple devices. We use 100% genuine-grade OEM-compliant parts backed by our comprehensive warranty. We are not an Apple Authorized Service Provider (AASP) and do not claim endorsement, sponsorship, or official affiliation with Apple Inc. “iPhone”, “Apple”, and related trademarks are the property of Apple Inc. and are utilized solely for device compatibility and descriptive identification.
+            iFixSpot is an independent service center providing genuine Apple parts and device services. Parts are covered by a warranty documented in real time at the time of service. We are not an Apple Authorized Service Provider (AASP) and do not claim endorsement, sponsorship, or official affiliation with Apple Inc. “iPhone”, “Apple”, and related trademarks are the property of Apple Inc. and are utilized solely for device compatibility and descriptive identification.
           </p>
+          <a href={SOCIALS.instagram} target="_blank" rel="noopener noreferrer" className="mt-3 inline-block text-xs text-zinc-500 hover:text-white">
+            Instagram: @ifixspot
+          </a>
         </div>
       </div>
 

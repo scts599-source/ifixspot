@@ -6,9 +6,6 @@ import {
   Plug,
   Camera,
   Layers,
-  Volume2,
-  Cpu,
-  ScanFace,
   ArrowUpRight,
 } from "lucide-react";
 import { Container, SectionHeading } from "@/components/ui";
@@ -25,57 +22,39 @@ type Service = {
 const SERVICES: Service[] = [
   {
     icon: Smartphone,
-    title: "Screen Replacement",
-    desc: "Cracked, blank or unresponsive display restored to original quality.",
-    msg: "I need an iPhone screen replacement. What's the price?",
+    title: "Display / Screen Replacement",
+    desc: "Physical display replacement with transparent diagnosis and parts availability confirmed before service.",
+    msg: "I need an iPhone display or screen replacement. What's the price?",
   },
   {
     icon: BatteryCharging,
-    title: "Battery Replacement",
-    desc: "Draining fast or shutting down? Premium battery replacement, back to full health.",
+    title: "Battery Component Replacement",
+    desc: "Physical battery component replacement after an in-person device assessment.",
     msg: "My iPhone battery is draining fast. I'd like a replacement.",
   },
   {
     icon: Droplets,
-    title: "Water Damage Restoration",
-    desc: "Dropped in water? We clean, dry and recover your device & data.",
-    msg: "My iPhone got water damaged. Can you recover it?",
+    title: "Rear Glass Replacement",
+    desc: "Physical rear glass replacement with the scope and risks explained before work begins.",
+    msg: "I need an iPhone rear glass replacement. What's the price?",
   },
   {
     icon: Plug,
-    title: "Charging Port Service",
-    desc: "Not charging or loose connection? Port service or replacement.",
+    title: "Charging Port Replacement",
+    desc: "Physical charging-port inspection and replacement for confirmed component faults.",
     msg: "My iPhone isn't charging properly. Can you fix the port?",
   },
   {
     icon: Camera,
-    title: "Camera Service",
-    desc: "Blurry, black or shaky camera? Front & rear camera solutions.",
+    title: "Camera Module Service",
+    desc: "Physical camera-module diagnosis and replacement for confirmed hardware faults.",
     msg: "My iPhone camera isn't working. Can you repair it?",
   },
   {
     icon: Layers,
-    title: "Back Glass",
-    desc: "Shattered back glass replaced cleanly — like it never happened.",
-    msg: "I need my iPhone back glass replaced.",
-  },
-  {
-    icon: Volume2,
-    title: "Speaker & Mic",
-    desc: "Can't hear calls or muffled audio? Speaker, mic & earpiece care.",
-    msg: "My iPhone speaker/mic has issues. Please help.",
-  },
-  {
-    icon: ScanFace,
-    title: "Face ID / Sensors",
-    desc: "Face ID not working? TrueDepth & sensor module service.",
-    msg: "My iPhone Face ID stopped working. Can you fix it?",
-  },
-  {
-    icon: Cpu,
-    title: "Software & Updates",
-    desc: "Stuck on Apple logo, iCloud, frozen or update issues resolved.",
-    msg: "My iPhone has a software / boot issue. Can you help?",
+    title: "Physical Device Diagnostics",
+    desc: "In-person component diagnostics at the Bangalore store or during an arranged doorstep visit.",
+    msg: "I need an in-person physical device diagnosis. Please share availability.",
   },
 ];
 

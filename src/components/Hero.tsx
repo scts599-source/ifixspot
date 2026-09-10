@@ -7,10 +7,10 @@ import { BRAND, PHONE_LINK } from "@/lib/site";
 
 // ─── Types ───────────────────────────────────────────────────────────────
 type DeviceSeries = "" | "iPhone 16 Series" | "iPhone 15 Series" | "iPhone 14 Series" | "iPhone 13 Series" | "iPhone 12 Series" | "iPhone 11 Series" | "iPhone XS / XS Max" | "Other iOS Device";
-type IssueType = "" | "Display / Screen Replacement" | "Battery Component Replacement" | "Rear Glass Replacement" | "Camera Module Service" | "Charging Port Replacement" | "Physical Hardware Diagnostics";
+type IssueType = "" | "Display / Screen Replacement" | "Battery Component Replacement" | "Rear Glass Replacement" | "Camera Module Service" | "Charging Port Replacement" | "Physical Device Diagnostics";
 
 const DEVICE_OPTIONS: DeviceSeries[] = ["iPhone 16 Series", "iPhone 15 Series", "iPhone 14 Series", "iPhone 13 Series", "iPhone 12 Series", "iPhone 11 Series", "iPhone XS / XS Max", "Other iOS Device"];
-const ISSUE_OPTIONS: IssueType[] = ["Display / Screen Replacement", "Battery Component Replacement", "Rear Glass Replacement", "Camera Module Service", "Charging Port Replacement", "Physical Hardware Diagnostics"];
+const ISSUE_OPTIONS: IssueType[] = ["Display / Screen Replacement", "Battery Component Replacement", "Rear Glass Replacement", "Camera Module Service", "Charging Port Replacement", "Physical Device Diagnostics"];
 
 // ─── Animations ──────────────────────────────────────────────────────────
 const EASE: [number, number, number, number] = [0.22, 1, 0.36, 1];
@@ -82,7 +82,7 @@ export default function Hero() {
             animate="show"
             className="font-display mt-5 text-balance text-[2.6rem] font-extrabold leading-[1.02] tracking-tight text-ink sm:text-6xl"
           >
-            Local Walk-In & Doorstep iOS Hardware Service in Kalyan Nagar
+            Walk-In & Doorstep iOS Device Service in Bangalore
           </motion.h1>
 
           <motion.p

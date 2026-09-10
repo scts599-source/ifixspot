@@ -3,13 +3,13 @@
 
 export const BRAND = {
   name: "iFixSpot",
-  tagline: "Physical iOS Device Care & Hardware Center",
+    tagline: "Physical iOS Device Care & Device Center",
   phoneLocal: "70227 18776",
   phoneDisplay: "+91 70227 18776",
   phoneIntl: "917022718776",
   area: "iFixSpot Service Center",
-  addressLine:
-    "B.R Plaza, CMR Main Rd, HRBR Layout 2nd Block,\nKalyan Nagar, Bengaluru, Karnataka 560043",
+    addressLine:
+      "B.R Plaza, CMR Main Rd, HRBR Layout 2nd Block,\nBangalore, Karnataka 560043",
   hours: "Monday – Sunday: 10:00 AM – 9:00 PM",
   email: "support@ifixspot.com",
 };
@@ -104,19 +104,17 @@ export const WHATSAPP_LINK = buildWhatsAppLink(); // dynamic but with no params
 export const PHONE_LINK = `tel:+${BRAND.phoneIntl}`;
 
 // ─── Google Maps ────────────────────────────────────────────────────────
-// B.R Plaza, CMR Main Rd, HRBR Layout 2nd Block, Kalyan Nagar, Bengaluru
-// Coordinates for the exact store location (more reliable than address query).
-const STORE_LAT = "13.0358";
-const STORE_LNG = "77.6374";
+// Use the verified Google Business listing supplied by the store.
 const STORE_ADDRESS_ENCODED =
-  "B.R+Plaza,+CMR+Main+Rd,+HRBR+Layout+2nd+Block,+Kalyan+Nagar,+Bengaluru,+Karnataka+560043";
+  "iFixSpot+Mobile+and+laptop+service+center,+Bangalore";
 
-// Coordinates-first embed (most reliable), with zoom 18 to show the street.
-export const MAPS_EMBED = `https://www.google.com/maps?q=${STORE_LAT},${STORE_LNG}&z=18&output=embed`;
+// Business-name query avoids displaying the previous, incorrect coordinates.
+export const MAPS_EMBED =
+  `https://www.google.com/maps?q=${STORE_ADDRESS_ENCODED}&z=17&output=embed`;
 
 // Directions link uses the full address so users see the place name.
 export const MAPS_DIRECTIONS =
-  `https://www.google.com/maps/dir/?api=1&destination=${STORE_ADDRESS_ENCODED}`;
+  "https://share.google/ADjjpr2Lm3CU49TZh";
 
 // Public-facing URL (for sharing / social previews).
 export const MAPS_URL =
@@ -124,7 +122,7 @@ export const MAPS_URL =
 
 // ─── Social Links ───────────────────────────────────────────────────────
 export const SOCIALS = {
-  instagram: "https://instagram.com/ifixspot",
+  instagram: "https://www.instagram.com/ifixspot/",
   facebook: "https://facebook.com/ifixspot",
   whatsapp: WHATSAPP_LINK,
 };
