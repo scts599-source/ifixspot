@@ -16,6 +16,7 @@ export const BRAND = {
 
 // ─── Device Models ──────────────────────────────────────────────────────
 export const DEVICE_MODELS = [
+  "iPhone 17 Series",
   "iPhone 16 Series",
   "iPhone 15 Series",
   "iPhone 14 Series",
@@ -114,11 +115,11 @@ export const MAPS_EMBED =
 
 // Directions link uses the full address so users see the place name.
 export const MAPS_DIRECTIONS =
-  "https://share.google/ADjjpr2Lm3CU49TZh";
+  "https://maps.app.goo.gl/hsxQLrK75Pha9Wmk6?g_st=ic";
 
 // Public-facing URL (for sharing / social previews).
 export const MAPS_URL =
-  "https://maps.app.goo.gl/KBDmPdV9mw79ZeSJA?g_st=ic";
+  "https://maps.app.goo.gl/hsxQLrK75Pha9Wmk6?g_st=ic";
 
 // ─── Social Links ───────────────────────────────────────────────────────
 export const SOCIALS = {

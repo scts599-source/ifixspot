@@ -12,8 +12,8 @@ import {
 } from "@/lib/site";
 import { WhatsAppIcon, InstagramIcon, FacebookIcon } from "@/components/icons";
 
-const STOREFRONT_IMAGE = "https://i.ibb.co/b5pVy9Tm/9-AC35-A64-41-ED-42-C4-B78-F-66-F2-BFC78886.png";
-const STOREFRONT_PAGE = "https://ibb.co/fdmWKwfF";
+const STOREFRONT_IMAGE = "https://i.ibb.co/YBctBrwW/IMG-3181.jpg";
+const STOREFRONT_PAGE = "https://ibb.co/MkcRkXQh";
 
 const EASE: [number, number, number, number] = [0.22, 1, 0.36, 1];
 

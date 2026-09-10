@@ -6,10 +6,10 @@ import { Pill } from "@/components/ui";
 import { BRAND, PHONE_LINK } from "@/lib/site";
 
 // ─── Types ───────────────────────────────────────────────────────────────
-type DeviceSeries = "" | "iPhone 16 Series" | "iPhone 15 Series" | "iPhone 14 Series" | "iPhone 13 Series" | "iPhone 12 Series" | "iPhone 11 Series" | "iPhone XS / XS Max" | "Other iOS Device";
+type DeviceSeries = "" | "iPhone 17 Series" | "iPhone 16 Series" | "iPhone 15 Series" | "iPhone 14 Series" | "iPhone 13 Series" | "iPhone 12 Series" | "iPhone 11 Series" | "iPhone XS / XS Max" | "Other iOS Device";
 type IssueType = "" | "Display / Screen Replacement" | "Battery Component Replacement" | "Rear Glass Replacement" | "Camera Module Service" | "Charging Port Replacement" | "Physical Device Diagnostics";
 
-const DEVICE_OPTIONS: DeviceSeries[] = ["iPhone 16 Series", "iPhone 15 Series", "iPhone 14 Series", "iPhone 13 Series", "iPhone 12 Series", "iPhone 11 Series", "iPhone XS / XS Max", "Other iOS Device"];
+const DEVICE_OPTIONS: DeviceSeries[] = ["iPhone 17 Series", "iPhone 16 Series", "iPhone 15 Series", "iPhone 14 Series", "iPhone 13 Series", "iPhone 12 Series", "iPhone 11 Series", "iPhone XS / XS Max", "Other iOS Device"];
 const ISSUE_OPTIONS: IssueType[] = ["Display / Screen Replacement", "Battery Component Replacement", "Rear Glass Replacement", "Camera Module Service", "Charging Port Replacement", "Physical Device Diagnostics"];
 
 // ─── Animations ──────────────────────────────────────────────────────────
