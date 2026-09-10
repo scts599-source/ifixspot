@@ -9,7 +9,7 @@ export const BRAND = {
   phoneIntl: "917022718776",
   area: "iFixSpot Service Center",
     addressLine:
-      "B.R Plaza, CMR Main Rd, HRBR Layout 2nd Block,\nBangalore, Karnataka 560043",
+    "B.R Plaza, CMR Main Rd, HRBR Layout 2nd Block, HRBR Layout,\nKalyan Nagar, Bengaluru, Karnataka 560043",
   hours: "Monday – Sunday: 10:00 AM – 9:00 PM",
   email: "support@ifixspot.com",
 };
@@ -107,7 +107,7 @@ export const PHONE_LINK = `tel:+${BRAND.phoneIntl}`;
 // ─── Google Maps ────────────────────────────────────────────────────────
 // Use the verified Google Business listing supplied by the store.
 const STORE_ADDRESS_ENCODED =
-  "iFixSpot+Mobile+and+laptop+service+center,+Bangalore";
+  "ifixspot+%7C+Mobile+And+laptop+service+center+Bangalore,+B.R+Plaza,+CMR+Main+Rd,+HRBR+Layout+2nd+Block,+HRBR+Layout,+Kalyan+Nagar,+Bengaluru,+Karnataka+560043";
 
 // Business-name query avoids displaying the previous, incorrect coordinates.
 export const MAPS_EMBED =
