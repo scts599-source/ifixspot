@@ -14,7 +14,7 @@ const REASONS = [
   {
     icon: BadgeCheck,
     title: "Premium Quality Parts",
-    desc: "We use OEM-grade components backed by a comprehensive service warranty.",
+    desc: "We use genuine Apple parts where available, with warranty coverage documented at service.",
   },
   {
     icon: ShieldCheck,

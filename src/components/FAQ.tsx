@@ -11,7 +11,7 @@ type FaqItem = { q: string; a: string };
 const FAQS: FaqItem[] = [
   {
     q: "Does ifixspot provide quality parts service?",
-    a: "Yes, we use premium OEM-grade components backed by a comprehensive service warranty. Every replacement is covered for your peace of mind.",
+    a: "Yes, we use genuine Apple parts where available, with the applicable warranty documented at the time of service. Every replacement is explained before installation.",
   },
   {
     q: "How long does a typical device service take?",
@@ -27,7 +27,7 @@ const FAQS: FaqItem[] = [
   },
   {
     q: "Which device models do you service?",
-    a: "We service all iOS device series — from iOS 12 series through the latest iOS 16 series and beyond. Display, battery, back glass, camera, charging port and more — we've got it covered.",
+    a: "We service the iPhone series listed in our booking form, including display, battery, rear glass, camera, and charging-port component work.",
   },
 ];
 

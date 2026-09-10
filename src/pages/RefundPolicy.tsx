@@ -12,7 +12,7 @@ export default function RefundPolicy() {
         </h1>
         <p className="mt-5 max-w-2xl text-base leading-relaxed text-zinc-600">
           This policy applies to physical hardware services performed by iFixSpot
-          at our Kalyan Nagar store or during an arranged doorstep visit.
+          at our Bangalore store or during an arranged doorstep visit.
         </p>
 
         <div className="mt-12 space-y-8">
