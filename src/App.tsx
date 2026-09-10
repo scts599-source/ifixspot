@@ -11,6 +11,7 @@ import Footer from "@/components/Footer";
 import FloatingButtons from "@/components/FloatingButtons";
 import PrivacyPolicy from "@/pages/PrivacyPolicy";
 import TermsOfService from "@/pages/TermsOfService";
+import RefundPolicy from "@/pages/RefundPolicy";
 
 /**
  * Home — the main landing page with all sections.
@@ -58,6 +59,7 @@ export default function App() {
           <Route path="/" element={<Home />} />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           <Route path="/terms-of-service" element={<TermsOfService />} />
+          <Route path="/warranty-refund-policy" element={<RefundPolicy />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>

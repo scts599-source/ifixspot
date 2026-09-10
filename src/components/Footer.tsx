@@ -7,12 +7,12 @@ import {
 } from "@/components/icons";
 
 const SERVICES = [
-  "Screen Replacement",
-  "Battery Replacement",
-  "Water Damage",
-  "Charging Port",
-  "Camera Service",
-  "Software Issues",
+  "Display / Screen Replacement",
+  "Battery Component Replacement",
+  "Rear Glass Replacement",
+  "Camera Module Service",
+  "Charging Port Replacement",
+  "Physical Hardware Diagnostics",
 ];
 
 export default function Footer() {
@@ -130,16 +130,15 @@ export default function Footer() {
       </div>
 
       {/* Critical Google Ads compliance disclaimer */}
-      <div className="border-t border-white/10">
-        <div className="mx-auto w-full max-w-6xl px-5 py-4 sm:px-8">
-          <p className="text-[11px] leading-relaxed text-zinc-500">
-            <strong className="text-zinc-400">Disclaimer:</strong>{" "}
-            {BRAND.name} is an independent, third-party device service provider.
-            We are not affiliated with, authorized by, endorsed by, or sponsored
-            by Apple Inc. or any other device manufacturer. All brand names,
-            trademarks, and logos mentioned on this website are the property of
-            their respective owners and are used solely for identification
-            purposes.
+      <div className="border-t border-zinc-800 bg-zinc-900 p-4 text-xs text-zinc-400">
+        <div className="mx-auto w-full max-w-6xl sm:px-4">
+          <p className="leading-relaxed">
+            <strong className="text-zinc-200">Explicit Walk-In &amp; Hardware Notice:</strong>{" "}
+            iFixSpot is a physical, local walk-in facility and on-site hardware maintenance center. We strictly perform physical hardware replacement and component diagnostics. WE DO NOT PROVIDE REMOTE DESKTOP ACCESS, ONLINE SOFTWARE TROUBLESHOOTING, ICLOUD BYPASS, PASSCODE EXTRACTION, OR DIGITAL UNLOCKING SERVICES. All operations are conducted in person by our trained technicians either at our Kalyan Nagar laboratory or directly in front of the customer during on-demand doorstep visits.
+          </p>
+          <p className="mt-3 leading-relaxed">
+            <strong className="text-zinc-200">Trademark Disclaimer:</strong>{" "}
+            iFixSpot is an independent service center providing replacement parts and local hardware services for Apple devices. We use 100% genuine-grade OEM-compliant parts backed by our comprehensive warranty. We are not an Apple Authorized Service Provider (AASP) and do not claim endorsement, sponsorship, or official affiliation with Apple Inc. “iPhone”, “Apple”, and related trademarks are the property of Apple Inc. and are utilized solely for device compatibility and descriptive identification.
           </p>
         </div>
       </div>
@@ -156,6 +155,10 @@ export default function Footer() {
             <span className="text-zinc-700">·</span>
             <a href="/terms-of-service" className="hover:text-white transition-colors">
               Terms of Service
+            </a>
+            <span className="text-zinc-700">·</span>
+            <a href="/warranty-refund-policy" className="hover:text-white transition-colors">
+              Warranty &amp; Refund Policy
             </a>
           </div>
         </div>

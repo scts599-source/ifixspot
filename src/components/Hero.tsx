@@ -1,16 +1,16 @@
 import { useState, useMemo } from "react";
 import { motion, type Variants } from "framer-motion";
-import { Star, ShieldCheck, Clock, Check, Phone, ChevronDown } from "lucide-react";
+import { Star, ShieldCheck, Clock, Check, Phone, ChevronDown, Lock } from "lucide-react";
 import heroPhone from "@/assets/hero-phone.jpg";
 import { Pill } from "@/components/ui";
 import { BRAND, PHONE_LINK } from "@/lib/site";
 
 // ─── Types ───────────────────────────────────────────────────────────────
-type DeviceSeries = "" | "iOS 12 Series" | "iOS 13 Series" | "iOS 14 Series" | "iOS 15 Series" | "iOS 16 Series" | "iOS 17 Series";
-type IssueType = "" | "Display" | "Battery" | "Back Glass" | "Camera" | "Port" | "Other";
+type DeviceSeries = "" | "iPhone 16 Series" | "iPhone 15 Series" | "iPhone 14 Series" | "iPhone 13 Series" | "iPhone 12 Series" | "iPhone 11 Series" | "iPhone XS / XS Max" | "Other iOS Device";
+type IssueType = "" | "Display / Screen Replacement" | "Battery Component Replacement" | "Rear Glass Replacement" | "Camera Module Service" | "Charging Port Replacement" | "Physical Hardware Diagnostics";
 
-const DEVICE_OPTIONS: DeviceSeries[] = ["iOS 12 Series", "iOS 13 Series", "iOS 14 Series", "iOS 15 Series", "iOS 16 Series", "iOS 17 Series"];
-const ISSUE_OPTIONS: IssueType[] = ["Display", "Battery", "Back Glass", "Camera", "Port", "Other"];
+const DEVICE_OPTIONS: DeviceSeries[] = ["iPhone 16 Series", "iPhone 15 Series", "iPhone 14 Series", "iPhone 13 Series", "iPhone 12 Series", "iPhone 11 Series", "iPhone XS / XS Max", "Other iOS Device"];
+const ISSUE_OPTIONS: IssueType[] = ["Display / Screen Replacement", "Battery Component Replacement", "Rear Glass Replacement", "Camera Module Service", "Charging Port Replacement", "Physical Hardware Diagnostics"];
 
 // ─── Animations ──────────────────────────────────────────────────────────
 const EASE: [number, number, number, number] = [0.22, 1, 0.36, 1];
@@ -72,7 +72,7 @@ export default function Hero() {
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-500 opacity-75" />
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-red-600" />
               </span>
-              Same-Day Service · Right Before Your Eyes
+              📍 Physical Store at B.R Plaza, CMR Main Rd
             </Pill>
           </motion.div>
 
@@ -82,11 +82,7 @@ export default function Hero() {
             animate="show"
             className="font-display mt-5 text-balance text-[2.6rem] font-extrabold leading-[1.02] tracking-tight text-ink sm:text-6xl"
           >
-            Premium iOS Device Care
-            <br />
-            <span className="bg-linear-to-r from-ink to-zinc-500 bg-clip-text text-transparent">
-              in 30 Minutes.
-            </span>
+            Local Walk-In & Doorstep iOS Hardware Service in Kalyan Nagar
           </motion.h1>
 
           <motion.p
@@ -95,7 +91,7 @@ export default function Hero() {
             animate="show"
             className="mt-6 max-w-md text-lg leading-relaxed text-zinc-500"
           >
-            Serviced right in front of your eyes. 100% Data Safe.
+            Physical component replacement and diagnostics performed in front of you. 100% data privacy preserved.
           </motion.p>
 
           {/* ─── The Booking Form ─── */}
@@ -202,7 +198,7 @@ export default function Hero() {
                     className="group mt-1 flex w-full items-center justify-center gap-2 rounded-xl bg-red-600 px-5 py-3.5 text-[15px] font-bold text-white shadow-lg shadow-red-600/30 transition-all hover:bg-red-700 hover:shadow-xl hover:shadow-red-600/40 active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-zinc-200 disabled:text-zinc-500 disabled:shadow-none"
                   >
                     <span>⚡</span>
-                    Check Price & Dispatch Technician
+                    Check Availability & Dispatch Specialist
                   </button>
                 </div>
 

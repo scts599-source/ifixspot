@@ -12,6 +12,9 @@ import {
 } from "@/lib/site";
 import { WhatsAppIcon, InstagramIcon, FacebookIcon } from "@/components/icons";
 
+const STOREFRONT_IMAGE = "https://i.ibb.co/b5pVy9Tm/9-AC35-A64-41-ED-42-C4-B78-F-66-F2-BFC78886.png";
+const STOREFRONT_PAGE = "https://ibb.co/fdmWKwfF";
+
 const EASE: [number, number, number, number] = [0.22, 1, 0.36, 1];
 
 const SOCIAL_LINKS = [
@@ -96,7 +99,7 @@ export default function Location() {
             </div>
           </motion.div>
 
-          {/* Details */}
+          {/* Physical storefront and details */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -105,6 +108,10 @@ export default function Location() {
             className="lg:col-span-2"
           >
             <div className="flex h-full flex-col gap-6 rounded-3xl border border-black/5 bg-white p-7 shadow-sm">
+              <a href={STOREFRONT_PAGE} target="_blank" rel="noopener noreferrer" className="group overflow-hidden rounded-2xl border border-zinc-100 bg-zinc-100">
+                <img src={STOREFRONT_IMAGE} alt="iFixSpot physical storefront at B.R Plaza" className="h-48 w-full object-cover transition-transform group-hover:scale-105" />
+                <span className="block px-3 py-2 text-xs font-semibold text-zinc-500">View physical storefront photo</span>
+              </a>
               <div className="flex items-start gap-4">
                 <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-zinc-100 text-ink">
                   <MapPin className="h-5 w-5" strokeWidth={2} />

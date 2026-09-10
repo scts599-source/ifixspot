@@ -3,71 +3,38 @@
 
 export const BRAND = {
   name: "iFixSpot",
-  tagline: "iPhone Repairs, Done Right.",
+  tagline: "Physical iOS Device Care & Hardware Center",
   phoneLocal: "70227 18776",
   phoneDisplay: "+91 70227 18776",
   phoneIntl: "917022718776",
   area: "iFixSpot Service Center",
   addressLine:
     "B.R Plaza, CMR Main Rd, HRBR Layout 2nd Block,\nKalyan Nagar, Bengaluru, Karnataka 560043",
-  hours: "Mon – Sun · 10:00 AM – 9:00 PM",
-  email: "support@ifixspot.in",
+  hours: "Monday – Sunday: 10:00 AM – 9:00 PM",
+  email: "support@ifixspot.com",
 };
 
 // ─── Device Models ──────────────────────────────────────────────────────
 export const DEVICE_MODELS = [
-  "iPhone 16 Pro Max",
-  "iPhone 16 Pro",
-  "iPhone 16 Plus",
-  "iPhone 16",
-  "iPhone 15 Pro Max",
-  "iPhone 15 Pro",
-  "iPhone 15 Plus",
-  "iPhone 15",
-  "iPhone 14 Pro Max",
-  "iPhone 14 Pro",
-  "iPhone 14 Plus",
-  "iPhone 14",
-  "iPhone 13 Pro Max",
-  "iPhone 13 Pro",
-  "iPhone 13 mini",
-  "iPhone 13",
-  "iPhone 12 Pro Max",
-  "iPhone 12 Pro",
-  "iPhone 12 mini",
-  "iPhone 12",
-  "iPhone 11 Pro Max",
-  "iPhone 11 Pro",
-  "iPhone 11",
-  "iPhone SE (3rd gen)",
-  "iPhone SE (2nd gen)",
-  "iPhone XS Max",
-  "iPhone XS",
-  "iPhone XR",
-  "iPhone X",
-  "iPhone 8 Plus",
-  "iPhone 8",
-  "iPhone 7 Plus",
-  "iPhone 7",
-  "iPhone 6s Plus",
-  "iPhone 6s",
-  "Other",
+  "iPhone 16 Series",
+  "iPhone 15 Series",
+  "iPhone 14 Series",
+  "iPhone 13 Series",
+  "iPhone 12 Series",
+  "iPhone 11 Series",
+  "iPhone XS / XS Max",
+  "Other iOS Device",
 ] as const;
 export type DeviceModel = (typeof DEVICE_MODELS)[number];
 
 // ─── Repair Types ───────────────────────────────────────────────────────
 export const REPAIR_TYPES = [
-  "Screen Replacement",
-  "Battery Replacement",
-  "Water Damage Repair",
-  "Charging Port Repair",
-  "Camera Repair",
-  "Back Glass Replacement",
-  "Speaker / Mic Repair",
-  "Face ID / Sensors",
-  "Software & Update Fix",
-  "Button Repair",
-  "Other / Not Sure",
+  "Display / Screen Replacement",
+  "Battery Component Replacement",
+  "Rear Glass Replacement",
+  "Camera Module Service",
+  "Charging Port Replacement",
+  "Physical Hardware Diagnostics",
 ] as const;
 export type RepairType = (typeof REPAIR_TYPES)[number];
 
@@ -153,7 +120,7 @@ export const MAPS_DIRECTIONS =
 
 // Public-facing URL (for sharing / social previews).
 export const MAPS_URL =
-  `https://www.google.com/maps/place/${STORE_ADDRESS_ENCODED}`;
+  "https://maps.app.goo.gl/KBDmPdV9mw79ZeSJA?g_st=ic";
 
 // ─── Social Links ───────────────────────────────────────────────────────
 export const SOCIALS = {
