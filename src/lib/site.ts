@@ -72,10 +72,12 @@ export interface BookingParams {
  *   📝 Note: Screen cracked diagonally
  *   📢 Source: Google Ads
  *   ──────────────────
- *   [iFixSpot Auto-Booking]
+ *   Please share availability and pricing. Thank you.
  */
 export function buildWhatsAppLink(params: BookingParams = {}): string {
-  const parts: string[] = [];
+  const parts: string[] = [
+    "Hello iFixSpot, I would like to enquire about iOS device service.",
+  ];
 
   if (params.deviceModel) parts.push(`📱 Device: ${params.deviceModel}`);
   if (params.repairType) parts.push(`🔧 Repair: ${params.repairType}`);
@@ -86,9 +88,7 @@ export function buildWhatsAppLink(params: BookingParams = {}): string {
   if (params.utmMedium) parts.push(`📊 Medium: ${params.utmMedium}`);
   if (params.utmSource) parts.push(`📊 UTM Source: ${params.utmSource}`);
 
-  // Separator + auto-booking tag for bot parsing
-  parts.push("────────────────");
-  parts.push("[iFixSpot Auto-Booking]");
+  parts.push("Please share availability and pricing. Thank you.");
 
   const message = parts.join("\n");
   return `https://wa.me/${BRAND.phoneIntl}?text=${encodeURIComponent(message)}`;
