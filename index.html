@@ -212,10 +212,27 @@
             element.textContent = safeLocation;
           });
         };
+        const applyAfterPaint = () => {
+          requestAnimationFrame(() => {
+            requestAnimationFrame(applyLocation);
+          });
+        };
+        const runWhenReady = () => {
+          applyAfterPaint();
+          const root = document.getElementById("root");
+          if (!root) return;
+          const observer = new MutationObserver(() => {
+            if (document.querySelector(".dki-loc")) {
+              applyLocation();
+              observer.disconnect();
+            }
+          });
+          observer.observe(root, { childList: true, subtree: true });
+        };
         if (document.readyState === "loading") {
-          document.addEventListener("DOMContentLoaded", applyLocation, { once: true });
+          document.addEventListener("DOMContentLoaded", runWhenReady, { once: true });
         } else {
-          applyLocation();
+          runWhenReady();
         }
       })();
     </script>
