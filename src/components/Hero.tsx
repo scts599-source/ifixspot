@@ -3,7 +3,7 @@ import { motion, type Variants } from "framer-motion";
 import { Star, ShieldCheck, Clock, Check, Phone, ChevronDown, Lock } from "lucide-react";
 import heroPhone from "@/assets/hero-phone.jpg";
 import { Pill } from "@/components/ui";
-import { BRAND, GOOGLE_SHEET_WEBHOOK_URL, PHONE_LINK } from "@/lib/site";
+import { BRAND, PHONE_LINK } from "@/lib/site";
 
 // ─── Types ───────────────────────────────────────────────────────────────
 type DeviceSeries = "" | "iPhone 17 Series" | "iPhone 16 Series" | "iPhone 15 Series" | "iPhone 14 Series" | "iPhone 13 Series" | "iPhone 12 Series" | "iPhone 11 Series" | "iPhone XS / XS Max" | "Other iOS Device";
@@ -49,28 +49,38 @@ export default function Hero() {
     return Object.keys(next).length === 0;
   }
 
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault(); // Stop default form submission
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
     if (!validate()) return;
 
     setIsSubmitting(true);
 
-    // Image Beacon Trick: 100% immune to CORS and React re-renders
-    const queryParams = new URLSearchParams({
-      device: device || "Unknown",
-      issue: issue || "Unknown",
-      mobile: mobile || "Unknown",
-      pincode: pincode || "Unknown",
-      source: "Hero Booking Form",
-    }).toString();
+    try {
+      const response = await fetch("https://formspree.io/f/moeqrpwg", {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          device: device || "Unknown",
+          issue: issue || "Unknown",
+          mobile: mobile || "Unknown",
+          pincode: pincode || "Unknown",
+          source: "Hero Booking Form",
+        }),
+      });
 
-    const trackingPixel = new Image();
-    trackingPixel.src = `${GOOGLE_SHEET_WEBHOOK_URL}?${queryParams}`;
-
-    setTimeout(() => {
+      if (response.ok) {
+        setReserved(true);
+      } else {
+        console.error("Formspree submission failed");
+      }
+    } catch (error) {
+      console.error("Network error during submission", error);
+    } finally {
       setIsSubmitting(false);
-      setReserved(true);
-    }, 1500);
+    }
   }
 
   return (
