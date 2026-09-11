@@ -80,6 +80,9 @@ export default function Location() {
                     <Navigation className="h-4 w-4" />
                     Open in Google Maps
                   </a>
+                  <p className="mt-4 text-sm text-zinc-600">
+                    <strong>Proximity Guide:</strong> Located in the heart of North-East Bengaluru. We are a 2-minute walk from the CMR Main Road junction, easily accessible for residents of HRBR Layout, Kammanahalli, and Banaswadi seeking immediate walk-in device assistance.
+                  </p>
                 </div>
               )}
 

@@ -12,6 +12,7 @@ import FloatingButtons from "@/components/FloatingButtons";
 import PrivacyPolicy from "@/pages/PrivacyPolicy";
 import TermsOfService from "@/pages/TermsOfService";
 import RefundPolicy from "@/pages/RefundPolicy";
+import AIFAQ from "@/components/AIFAQ";
 
 /**
  * Home — the main landing page with all sections.
@@ -63,6 +64,7 @@ export default function App() {
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
+      <AIFAQ />
       <Footer />
       <FloatingButtons />
     </div>
