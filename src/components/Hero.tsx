@@ -111,7 +111,8 @@ export default function Hero() {
             animate="show"
             className="font-display mt-5 text-balance text-[2.6rem] font-extrabold leading-[1.02] tracking-tight text-ink sm:text-6xl"
           >
-            Walk-In & Doorstep iOS Device Service in Bangalore
+            Premium iOS Device & Smartphone Hardware Service in{" "}
+            <span className="dki-loc">Kalyan Nagar</span>
           </motion.h1>
 
           <motion.p
@@ -313,8 +314,10 @@ export default function Hero() {
             <img
               src={heroPhone}
               alt="Premium iOS device care at ifixspot"
+              width={800}
+              height={1000}
               className="aspect-[4/5] w-full object-cover"
-              loading="eager"
+              loading="lazy"
             />
             <div className="absolute inset-x-0 bottom-0 h-1/3 bg-linear-to-t from-black/30 to-transparent" />
           </div>

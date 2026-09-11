@@ -73,6 +73,8 @@ export default function WhyChooseUs() {
               <img
                 src={repairImg}
                 alt="iFixSpot technician servicing a premium device with precision tools"
+                width={1200}
+                height={900}
                 className="aspect-[4/3] w-full object-cover"
                 loading="lazy"
               />

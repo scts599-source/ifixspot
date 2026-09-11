@@ -80,9 +80,6 @@ export default function Location() {
                     <Navigation className="h-4 w-4" />
                     Open in Google Maps
                   </a>
-                  <p className="mt-4 text-sm text-zinc-600">
-                    <strong>Proximity Guide:</strong> Located in the heart of North-East Bengaluru. We are a 2-minute walk from the CMR Main Road junction, easily accessible for residents of HRBR Layout, Kammanahalli, and Banaswadi seeking immediate walk-in device assistance.
-                  </p>
                 </div>
               )}
 
@@ -112,7 +109,14 @@ export default function Location() {
           >
             <div className="flex h-full flex-col gap-6 rounded-3xl border border-black/5 bg-white p-7 shadow-sm">
               <a href={STOREFRONT_PAGE} target="_blank" rel="noopener noreferrer" className="group overflow-hidden rounded-2xl border border-zinc-100 bg-zinc-100">
-                <img src={STOREFRONT_IMAGE} alt="iFixSpot physical storefront at B.R Plaza" className="h-48 w-full object-cover transition-transform group-hover:scale-105" />
+                <img
+                  src={STOREFRONT_IMAGE}
+                  alt="iFixSpot physical storefront at B.R Plaza"
+                  width={800}
+                  height={600}
+                  loading="lazy"
+                  className="h-48 w-full object-cover transition-transform group-hover:scale-105"
+                />
                 <span className="block px-3 py-2 text-xs font-semibold text-zinc-500">View physical storefront photo</span>
               </a>
               <div className="flex items-start gap-4">
@@ -135,6 +139,9 @@ export default function Location() {
                     <Navigation className="h-3.5 w-3.5" />
                     Get directions
                   </a>
+                  <p className="mt-4 text-sm text-zinc-600">
+                    <strong>Proximity Guide:</strong> Located in the heart of North-East Bengaluru. We are a 2-minute walk from the CMR Main Road junction, easily accessible for residents of HRBR Layout, Kammanahalli, and Banaswadi seeking immediate walk-in device assistance.
+                  </p>
                 </div>
               </div>
 

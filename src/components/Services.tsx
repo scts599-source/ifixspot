@@ -72,8 +72,8 @@ export default function Services() {
           eyebrow="What we service"
           title={
             <>
-              Whatever issue your device faces,
-              <br className="hidden sm:block" /> we have it covered.
+              Screen, Battery &amp; Back Glass Replacement Near{" "}
+              <span className="dki-loc">Kalyan Nagar</span>
             </>
           }
           subtitle="Pick your issue and get an instant quote on WhatsApp. Most services done the same day."

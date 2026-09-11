@@ -10,6 +10,14 @@ type FaqItem = { q: string; a: string };
 
 const FAQS: FaqItem[] = [
   {
+    q: "How fast is screen replacement at iFixSpot Kalyan Nagar?",
+    a: "Many straightforward screen replacements can be completed during the same visit after an in-person diagnosis. We confirm the expected time and parts availability before starting.",
+  },
+  {
+    q: "Is iFixSpot a walk-in physical store?",
+    a: "Yes. iFixSpot operates as a physical walk-in device service center in Kalyan Nagar, Bengaluru, with arranged doorstep visits also available.",
+  },
+  {
     q: "Does ifixspot provide quality parts service?",
     a: "Yes, we use genuine Apple parts where available, with the applicable warranty documented at the time of service. Every replacement is explained before installation.",
   },
