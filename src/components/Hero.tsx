@@ -56,19 +56,21 @@ export default function Hero() {
     setIsSubmitting(true);
 
     try {
+      // Format data safely for Google Apps Script
+      const formData = new URLSearchParams();
+      formData.append("device", device || "Unknown");
+      formData.append("issue", issue || "Unknown");
+      formData.append("mobile", mobile || "Unknown");
+      formData.append("pincode", pincode || "Unknown");
+      formData.append("source", "Hero Booking Form");
+
       await fetch(GOOGLE_SHEET_WEBHOOK_URL, {
         method: "POST",
         mode: "no-cors",
         headers: {
-          "Content-Type": "text/plain;charset=utf-8",
+          "Content-Type": "application/x-www-form-urlencoded",
         },
-        body: JSON.stringify({
-          device,
-          issue,
-          mobile,
-          pincode,
-          source: "Hero Booking Form",
-        }),
+        body: formData,
       });
     } catch (err) {
       console.error("Webhook error:", err);
