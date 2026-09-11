@@ -50,11 +50,18 @@ export default function Hero() {
   }
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    // If validation fails, stop the submission entirely
     if (!validate()) {
       e.preventDefault();
       return;
     }
+
+    // Native form submission continues while the UI transitions independently.
     setIsSubmitting(true);
+    setTimeout(() => {
+      setIsSubmitting(false);
+      setReserved(true);
+    }, 1500);
   }
 
   return (
@@ -110,12 +117,6 @@ export default function Hero() {
                   name="hidden_iframe"
                   id="hidden_iframe"
                   style={{ display: "none" }}
-                  onLoad={() => {
-                    if (isSubmitting) {
-                      setIsSubmitting(false);
-                      setReserved(true);
-                    }
-                  }}
                 />
                 <form
                   action={GOOGLE_SHEET_WEBHOOK_URL}
