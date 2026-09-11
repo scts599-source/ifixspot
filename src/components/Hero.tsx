@@ -49,15 +49,24 @@ export default function Hero() {
     return Object.keys(next).length === 0;
   }
 
-  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    // If validation fails, stop the submission entirely
-    if (!validate()) {
-      e.preventDefault();
-      return;
-    }
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault(); // Stop default form submission
+    if (!validate()) return;
 
-    // Native form submission continues while the UI transitions independently.
     setIsSubmitting(true);
+
+    // Image Beacon Trick: 100% immune to CORS and React re-renders
+    const queryParams = new URLSearchParams({
+      device: device || "Unknown",
+      issue: issue || "Unknown",
+      mobile: mobile || "Unknown",
+      pincode: pincode || "Unknown",
+      source: "Hero Booking Form",
+    }).toString();
+
+    const trackingPixel = new Image();
+    trackingPixel.src = `${GOOGLE_SHEET_WEBHOOK_URL}?${queryParams}`;
+
     setTimeout(() => {
       setIsSubmitting(false);
       setReserved(true);
@@ -112,24 +121,10 @@ export default function Hero() {
             className="mt-8 w-full max-w-md"
           >
             {!reserved ? (
-              <>
-                <iframe
-                  name="hidden_iframe"
-                  id="hidden_iframe"
-                  style={{ display: "none" }}
-                />
-                <form
-                  action={GOOGLE_SHEET_WEBHOOK_URL}
-                  method="POST"
-                  target="hidden_iframe"
+              <form
                 onSubmit={handleSubmit}
                 className="overflow-hidden rounded-3xl border border-black/5 bg-white p-5 shadow-xl shadow-black/5 sm:p-6"
-                >
-                <input type="hidden" name="device" value={device} />
-                <input type="hidden" name="issue" value={issue} />
-                <input type="hidden" name="mobile" value={mobile} />
-                <input type="hidden" name="pincode" value={pincode} />
-                <input type="hidden" name="source" value="Hero Booking Form" />
+              >
                 <div className="mb-4 flex items-center justify-between">
                   <div>
                     <h3 className="font-display text-lg font-extrabold text-ink">
@@ -242,8 +237,7 @@ export default function Hero() {
                   <Lock className="h-3 w-3" />
                   Your details are secure · We never share your info
                 </p>
-                </form>
-              </>
+              </form>
             ) : (
               /* ─── Success State ─── */
               <motion.div
