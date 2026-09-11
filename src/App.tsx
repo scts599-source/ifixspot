@@ -1,4 +1,4 @@
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Link } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
 import Services from "@/components/Services";
@@ -40,12 +40,12 @@ function NotFound() {
     <section className="flex min-h-[60vh] flex-col items-center justify-center text-center px-5">
       <h1 className="font-display text-6xl font-extrabold text-ink">404</h1>
       <p className="mt-4 text-lg text-zinc-500">Page not found</p>
-      <a
-        href="/"
+      <Link
+        to="/"
         className="mt-6 rounded-full bg-ink px-7 py-3.5 text-[15px] font-semibold text-white"
       >
         Go back home
-      </a>
+      </Link>
     </section>
   );
 }

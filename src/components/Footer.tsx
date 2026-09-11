@@ -1,4 +1,5 @@
 import { NAV_LINKS, BRAND, SOCIALS, WHATSAPP_LINK, PHONE_LINK } from "@/lib/site";
+import { Link } from "react-router-dom";
 import {
   WhatsAppIcon,
   InstagramIcon,
@@ -152,17 +153,17 @@ export default function Footer() {
             © {new Date().getFullYear()} {BRAND.name}. All rights reserved.
           </p>
           <div className="flex items-center gap-4">
-            <a href="/privacy-policy" className="hover:text-white transition-colors">
+            <Link to="/privacy-policy" className="hover:text-white transition-colors">
               Privacy Policy
-            </a>
+            </Link>
             <span className="text-zinc-700">·</span>
-            <a href="/terms-of-service" className="hover:text-white transition-colors">
+            <Link to="/terms-of-service" className="hover:text-white transition-colors">
               Terms of Service
-            </a>
+            </Link>
             <span className="text-zinc-700">·</span>
-            <a href="/warranty-refund-policy" className="hover:text-white transition-colors">
+            <Link to="/warranty-refund-policy" className="hover:text-white transition-colors">
               Warranty &amp; Refund Policy
-            </a>
+            </Link>
           </div>
         </div>
       </div>
