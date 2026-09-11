@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo } from "react";
 import { motion, type Variants } from "framer-motion";
 import { Star, ShieldCheck, Clock, Check, Phone, ChevronDown, Lock } from "lucide-react";
 import heroPhone from "@/assets/hero-phone.jpg";
@@ -35,7 +35,6 @@ export default function Hero() {
   const [errors, setErrors] = useState<{ mobile?: string; pincode?: string }>({});
   const [reserved, setReserved] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const iframeReady = useRef(false);
 
   const canSubmit = useMemo(
     () => device && issue && mobile.length === 10 && pincode.length >= 4,
@@ -55,9 +54,7 @@ export default function Hero() {
       e.preventDefault();
       return;
     }
-
     setIsSubmitting(true);
-    // The browser natively submits the form to the hidden iframe.
   }
 
   return (
@@ -108,13 +105,30 @@ export default function Hero() {
             className="mt-8 w-full max-w-md"
           >
             {!reserved ? (
-              <form
+              <>
+                <iframe
+                  name="hidden_iframe"
+                  id="hidden_iframe"
+                  style={{ display: "none" }}
+                  onLoad={() => {
+                    if (isSubmitting) {
+                      setIsSubmitting(false);
+                      setReserved(true);
+                    }
+                  }}
+                />
+                <form
+                  action={GOOGLE_SHEET_WEBHOOK_URL}
+                  method="POST"
+                  target="hidden_iframe"
                 onSubmit={handleSubmit}
-                action={GOOGLE_SHEET_WEBHOOK_URL}
-                method="GET"
-                target="hero-booking-response"
                 className="overflow-hidden rounded-3xl border border-black/5 bg-white p-5 shadow-xl shadow-black/5 sm:p-6"
-              >
+                >
+                <input type="hidden" name="device" value={device} />
+                <input type="hidden" name="issue" value={issue} />
+                <input type="hidden" name="mobile" value={mobile} />
+                <input type="hidden" name="pincode" value={pincode} />
+                <input type="hidden" name="source" value="Hero Booking Form" />
                 <div className="mb-4 flex items-center justify-between">
                   <div>
                     <h3 className="font-display text-lg font-extrabold text-ink">
@@ -133,7 +147,6 @@ export default function Hero() {
                   {/* Device Series */}
                   <div className="relative">
                     <select
-                      name="device"
                       value={device}
                       onChange={(e) => setDevice(e.target.value as DeviceSeries)}
                       className="peer w-full appearance-none rounded-xl border border-zinc-200 bg-zinc-50/60 px-4 py-3 pr-10 text-sm text-ink outline-none transition-all focus:border-red-500 focus:bg-white focus:ring-2 focus:ring-red-500/20"
@@ -151,7 +164,6 @@ export default function Hero() {
                   {/* Issue Type */}
                   <div className="relative">
                     <select
-                      name="issue"
                       value={issue}
                       onChange={(e) => setIssue(e.target.value as IssueType)}
                       className="peer w-full appearance-none rounded-xl border border-zinc-200 bg-zinc-50/60 px-4 py-3 pr-10 text-sm text-ink outline-none transition-all focus:border-red-500 focus:bg-white focus:ring-2 focus:ring-red-500/20"
@@ -169,7 +181,6 @@ export default function Hero() {
                   {/* Mobile Number */}
                   <div>
                     <input
-                      name="mobile"
                       type="tel"
                       inputMode="numeric"
                       maxLength={10}
@@ -188,7 +199,6 @@ export default function Hero() {
                   {/* Pincode */}
                   <div>
                     <input
-                      name="pincode"
                       type="tel"
                       inputMode="numeric"
                       maxLength={8}
@@ -227,13 +237,12 @@ export default function Hero() {
                   </button>
                 </div>
 
-                <input type="hidden" name="source" value="Hero Booking Form" />
-
                 <p className="mt-4 flex items-center justify-center gap-1.5 text-xs text-zinc-400">
                   <Lock className="h-3 w-3" />
                   Your details are secure · We never share your info
                 </p>
-              </form>
+                </form>
+              </>
             ) : (
               /* ─── Success State ─── */
               <motion.div
@@ -268,21 +277,6 @@ export default function Hero() {
               </motion.div>
             )}
           </motion.div>
-
-          <iframe
-            name="hero-booking-response"
-            title="Booking submission response"
-            className="hidden"
-            tabIndex={-1}
-            onLoad={() => {
-              if (!iframeReady.current) {
-                iframeReady.current = true;
-                return;
-              }
-              setIsSubmitting(false);
-              setReserved(true);
-            }}
-          />
 
           {/* ─── Trust row ─── */}
           <motion.div
