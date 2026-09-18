@@ -79,4 +79,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     console.error('CAPI Server Error:', err);
     return res.status(500).json({ success: false, error: 'Internal server error' });
   }
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> 190405a431e0858a16dbfeb7c85864f930facdd6
