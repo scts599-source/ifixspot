@@ -7,7 +7,6 @@ function hashData(input: string): string {
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // Allow only POST requests
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
@@ -18,7 +17,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const ACCESS_TOKEN = process.env.META_CAPI_ACCESS_TOKEN;
 
   if (!ACCESS_TOKEN) {
-    console.error('Missing META_CAPI_ACCESS_TOKEN in environment variables');
+    console.error('Missing META_CAPI_ACCESS_TOKEN');
     return res.status(500).json({ error: 'Server token configuration missing' });
   }
 
@@ -29,7 +28,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
   const hashedPhone = hashData(cleanPhone);
 
-  // Grab IP and User-Agent for high match rate
   const forwarded = req.headers['x-forwarded-for'];
   const clientIp = typeof forwarded === 'string' ? forwarded.split(',')[0].trim() : req.socket?.remoteAddress;
   const userAgent = (req.headers['user-agent'] as string) || '';
@@ -39,7 +37,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       {
         event_name: 'Lead',
         event_time: Math.floor(Date.now() / 1000),
-        event_id: eventId, // Must match the browser eventID for deduplication
+        event_id: eventId,
         event_source_url: sourceUrl || 'https://ifixspot.com',
         action_source: 'website',
         user_data: {
@@ -48,10 +46,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           client_user_agent: userAgent
         },
         custom_data: {
+          value: 1.0, // Meta requires a numerical value for optimization
           currency: 'INR',
-          content_name: 'iPhone Hardware Service',
+          content_name: 'Hardware Service',
           content_category: deviceModel || 'iPhone',
-          predicted_ltv: issue || 'Hardware Triage'
+          // We pass the issue as a custom property instead of predicted_ltv
+          status: issue || 'Triage' 
         }
       }
     ]
