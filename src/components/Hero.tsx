@@ -1,16 +1,52 @@
 import { useState, useMemo } from "react";
 import { motion, type Variants } from "framer-motion";
-import { Star, ShieldCheck, Clock, Check, Phone, ChevronDown, Lock } from "lucide-react";
+import { Star, ShieldCheck, Clock, Check, Phone, ChevronDown } from "lucide-react";
 import heroPhone from "@/assets/hero-phone.jpg";
 import { Pill } from "@/components/ui";
 import { BRAND, PHONE_LINK } from "@/lib/site";
 
 // ─── Types ───────────────────────────────────────────────────────────────
-type DeviceSeries = "" | "iPhone 17 Series" | "iPhone 16 Series" | "iPhone 15 Series" | "iPhone 14 Series" | "iPhone 13 Series" | "iPhone 12 Series" | "iPhone 11 Series" | "iPhone XS / XS Max" | "Other iOS Device";
-type IssueType = "" | "Display / Screen Replacement" | "Battery Component Replacement" | "Rear Glass Replacement" | "Camera Module Service" | "Charging Port Replacement" | "Physical Device Diagnostics";
+type DeviceSeries =
+  | ""
+  | "iPhone 17 Series"
+  | "iPhone 16 Series"
+  | "iPhone 15 Series"
+  | "iPhone 14 Series"
+  | "iPhone 13 Series"
+  | "iPhone 12 Series"
+  | "iPhone 11 Series"
+  | "iPhone XS / XS Max"
+  | "Other iOS Device";
 
-const DEVICE_OPTIONS: DeviceSeries[] = ["iPhone 17 Series", "iPhone 16 Series", "iPhone 15 Series", "iPhone 14 Series", "iPhone 13 Series", "iPhone 12 Series", "iPhone 11 Series", "iPhone XS / XS Max", "Other iOS Device"];
-const ISSUE_OPTIONS: IssueType[] = ["Display / Screen Replacement", "Battery Component Replacement", "Rear Glass Replacement", "Camera Module Service", "Charging Port Replacement", "Physical Device Diagnostics"];
+type IssueType =
+  | ""
+  | "Display / Screen Replacement"
+  | "Battery Component Replacement"
+  | "Rear Glass Replacement"
+  | "Camera Module Service"
+  | "Charging Port Replacement"
+  | "Physical Device Diagnostics";
+
+const DEVICE_OPTIONS: DeviceSeries[] = [
+  "iPhone 17 Series",
+  "iPhone 16 Series",
+  "iPhone 15 Series",
+  "iPhone 14 Series",
+  "iPhone 13 Series",
+  "iPhone 12 Series",
+  "iPhone 11 Series",
+  "iPhone XS / XS Max",
+  "Other iOS Device",
+];
+
+const ISSUE_OPTIONS: IssueType[] = [
+  "Display / Screen Replacement",
+  "Battery Component Replacement",
+  "Rear Glass Replacement",
+  "Camera Module Service",
+  "Charging Port Replacement",
+  "Physical Device Diagnostics",
+];
 
 // ─── Animations ──────────────────────────────────────────────────────────
 const EASE: [number, number, number, number] = [0.22, 1, 0.36, 1];
@@ -55,8 +91,40 @@ export default function Hero() {
 
     setIsSubmitting(true);
 
+    // 1. Generate unique deduplication event ID for Meta Pixel + CAPI
+    const eventId = `lead_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+
+    // 2. Fire Browser Meta Pixel with eventID
+    if (typeof window !== "undefined" && (window as unknown as { fbq?: (...args: unknown[]) => void }).fbq) {
+      (window as unknown as { fbq: (...args: unknown[]) => void }).fbq(
+        "track",
+        "Lead",
+        {
+          content_name: "iPhone Hardware Service",
+          content_category: device || "iPhone",
+          value: 1.0,
+          currency: "INR",
+        },
+        { eventID: eventId } // Deduplication key
+      );
+    }
+
+    // 3. Fire Server-Side Meta Conversions API (Vercel Serverless Function)
+    fetch("/api/track-lead", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        eventId,
+        phoneNumber: mobile,
+        deviceModel: device,
+        issue: issue,
+        sourceUrl: window.location.href,
+      }),
+    }).catch((err) => console.error("Meta CAPI dispatch error:", err));
+
+    // 4. Formspree backup submission
     try {
-      const response = await fetch("https://formspree.io/f/moeqrpwg", {
+      await fetch("https://formspree.io/f/moeqrpwg", {
         method: "POST",
         headers: {
           Accept: "application/json",
@@ -67,19 +135,22 @@ export default function Hero() {
           issue: issue || "Unknown",
           mobile: mobile || "Unknown",
           pincode: pincode || "Unknown",
-          source: "Meta Ads Leads",
+          source: "Hero Booking Form",
+          eventId,
         }),
       });
-
-      if (response.ok) {
-        setReserved(true);
-      } else {
-        console.error("Formspree submission failed");
-      }
     } catch (error) {
-      console.error("Network error during submission", error);
+      console.error("Formspree submission error:", error);
     } finally {
       setIsSubmitting(false);
+      setReserved(true);
+
+      // Optional auto-prompt to WhatsApp
+      const cleanPhone = "917022718776";
+      const text = encodeURIComponent(
+        `Hi iFixSpot, I just booked an assessment for my ${device} (${issue}). My mobile is ${mobile}.`
+      );
+      window.open(`https://wa.me/${cleanPhone}?text=${text}`, "_blank");
     }
   }
 
@@ -111,7 +182,7 @@ export default function Hero() {
             animate="show"
             className="font-display mt-5 text-balance text-[2.6rem] font-extrabold leading-[1.02] tracking-tight text-ink sm:text-6xl"
           >
-            Premium iOS Device & Smartphone Hardware Service in{" "}
+            Premium iOS Device &amp; Smartphone Hardware Service in{" "}
             <span className="dki-loc">Kalyan Nagar</span>
           </motion.h1>
 
@@ -384,10 +455,17 @@ export default function Hero() {
   );
 }
 
-// tiny lock helper so we don't pull from lucide unnecessarily
 function Lock({ className }: { className?: string }) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2.2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
       <rect x="3" y="11" width="18" height="11" rx="2" />
       <path d="M7 11V7a5 5 0 0 1 10 0v4" />
     </svg>
