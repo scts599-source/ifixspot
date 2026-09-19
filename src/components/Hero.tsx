@@ -68,13 +68,14 @@ export default function Hero() {
   const [issue, setIssue] = useState<IssueType>("");
   const [mobile, setMobile] = useState("");
   const [pincode, setPincode] = useState("");
+  const [agreedToPremium, setAgreedToPremium] = useState(false);
   const [errors, setErrors] = useState<{ mobile?: string; pincode?: string }>({});
   const [reserved, setReserved] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const canSubmit = useMemo(
-    () => device && issue && mobile.length === 10 && pincode.length >= 4,
-    [device, issue, mobile, pincode]
+    () => device && issue && mobile.length === 10 && pincode.length >= 4 && agreedToPremium,
+    [device, issue, mobile, pincode, agreedToPremium]
   );
 
   function validate(): boolean {
@@ -88,69 +89,63 @@ export default function Hero() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!validate()) return;
+    
+    if (!agreedToPremium) {
+      alert("Please acknowledge the premium service terms to proceed.");
+      return;
+    }
 
     setIsSubmitting(true);
 
-    // 1. Generate unique deduplication event ID for Meta Pixel + CAPI
-    const eventId = `lead_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-
-    // 2. Fire Browser Meta Pixel with eventID
-    if (typeof window !== "undefined" && (window as unknown as { fbq?: (...args: unknown[]) => void }).fbq) {
-      (window as unknown as { fbq: (...args: unknown[]) => void }).fbq(
-        "track",
-        "Lead",
-        {
-          content_name: "iPhone Hardware Service",
-          content_category: device || "iPhone",
-          value: 1.0,
-          currency: "INR",
-        },
-        { eventID: eventId } // Deduplication key
-      );
-    }
-
-    // 3. Fire Server-Side Meta Conversions API (Vercel Serverless Function)
-    fetch("/api/track-lead", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        eventId,
-        phoneNumber: mobile,
-        deviceModel: device,
-        issue: issue,
-        sourceUrl: window.location.href,
-      }),
-    }).catch((err) => console.error("Meta CAPI dispatch error:", err));
-
-    // 4. Formspree backup submission
     try {
-      await fetch("https://formspree.io/f/moeqrpwg", {
+      // 1. Send data to Vercel Serverless Function (Supabase CRM + Meta CAPI)
+      const response = await fetch("/api/track-lead", {
         method: "POST",
-        headers: {
-          Accept: "application/json",
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          device: device || "Unknown",
-          issue: issue || "Unknown",
-          mobile: mobile || "Unknown",
-          pincode: pincode || "Unknown",
-          source: "Hero Booking Form",
-          eventId,
+          phoneNumber: mobile,
+          deviceModel: device,
+          issue: issue,
+          sourceUrl: window.location.href,
         }),
       });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setReserved(true);
+
+        // 2. Fire Browser Meta Pixel using the exact Database ID for Deduplication
+        if (typeof window !== "undefined" && (window as unknown as { fbq?: (...args: unknown[]) => void }).fbq && data.lead_id) {
+          (window as unknown as { fbq: (...args: unknown[]) => void }).fbq(
+            "track",
+            "Lead",
+            {
+              content_name: "iPhone Hardware Service",
+              content_category: device || "iPhone",
+              value: 1.0,
+              currency: "INR",
+              status: issue
+            },
+            { eventID: data.lead_id }
+          );
+        }
+
+        // 3. Optional auto-prompt to WhatsApp
+        const cleanPhone = "917022718776";
+        const text = encodeURIComponent(
+          `Hi iFixSpot, I just booked an assessment for my ${device} (${issue}). My mobile is ${mobile}.`
+        );
+        window.open(`https://wa.me/${cleanPhone}?text=${text}`, "_blank");
+      } else {
+        console.error("API Error:", data);
+        alert("Something went wrong processing your request. Please try again.");
+      }
     } catch (error) {
-      console.error("Formspree submission error:", error);
+      console.error("Network Error:", error);
+      alert("Network error. Please try again.");
     } finally {
       setIsSubmitting(false);
-      setReserved(true);
-
-      // Optional auto-prompt to WhatsApp
-      const cleanPhone = "917022718776";
-      const text = encodeURIComponent(
-        `Hi iFixSpot, I just booked an assessment for my ${device} (${issue}). My mobile is ${mobile}.`
-      );
-      window.open(`https://wa.me/${cleanPhone}?text=${text}`, "_blank");
     }
   }
 
@@ -159,12 +154,10 @@ export default function Hero() {
       id="top"
       className="relative overflow-hidden bg-white pt-28 pb-16 sm:pt-32 lg:pt-36"
     >
-      {/* soft background accents */}
       <div className="pointer-events-none absolute inset-0 bg-dot-grid opacity-60" />
       <div className="pointer-events-none absolute -top-40 left-1/2 h-[36rem] w-[36rem] -translate-x-1/2 rounded-full bg-linear-to-b from-red-100/40 to-transparent blur-3xl" />
 
       <div className="relative mx-auto grid w-full max-w-6xl grid-cols-1 items-center gap-12 px-5 sm:px-8 lg:grid-cols-2 lg:gap-8">
-        {/* ─── Copy ─── */}
         <div className="flex flex-col items-start">
           <motion.div variants={stagger(0)} initial="hidden" animate="show">
             <Pill className="border-red-100 bg-red-50/60 text-red-700">
@@ -195,7 +188,6 @@ export default function Hero() {
             Physical component replacement and diagnostics performed in front of you. 100% data privacy preserved.
           </motion.p>
 
-          {/* ─── The Booking Form ─── */}
           <motion.div
             variants={stagger(3)}
             initial="hidden"
@@ -222,7 +214,6 @@ export default function Hero() {
                 </div>
 
                 <div className="space-y-3">
-                  {/* Device Series */}
                   <div className="relative">
                     <select
                       value={device}
@@ -239,7 +230,6 @@ export default function Hero() {
                     <ChevronDown className="pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
                   </div>
 
-                  {/* Issue Type */}
                   <div className="relative">
                     <select
                       value={issue}
@@ -256,7 +246,6 @@ export default function Hero() {
                     <ChevronDown className="pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
                   </div>
 
-                  {/* Mobile Number */}
                   <div>
                     <input
                       type="tel"
@@ -274,7 +263,6 @@ export default function Hero() {
                     )}
                   </div>
 
-                  {/* Pincode */}
                   <div>
                     <input
                       type="tel"
@@ -292,7 +280,20 @@ export default function Hero() {
                     )}
                   </div>
 
-                  {/* Submit */}
+                  <div className="flex items-start pt-1 pb-1">
+                    <input
+                      type="checkbox"
+                      id="premium-agreement"
+                      className="mt-1 mr-3 h-4 w-4 cursor-pointer accent-red-600"
+                      checked={agreedToPremium}
+                      onChange={(e) => setAgreedToPremium(e.target.checked)}
+                      required
+                    />
+                    <label htmlFor="premium-agreement" className="text-xs text-zinc-500 leading-relaxed cursor-pointer">
+                      I understand iFixSpot uses premium parts starting at ₹2,499, and I agree to a standard diagnostic fee if I proceed.
+                    </label>
+                  </div>
+
                   <button
                     type="submit"
                     disabled={!canSubmit || isSubmitting}
@@ -321,7 +322,6 @@ export default function Hero() {
                 </p>
               </form>
             ) : (
-              /* ─── Success State ─── */
               <motion.div
                 initial={{ opacity: 0, scale: 0.96, y: 8 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -355,7 +355,6 @@ export default function Hero() {
             )}
           </motion.div>
 
-          {/* ─── Trust row ─── */}
           <motion.div
             variants={stagger(4)}
             initial="hidden"
@@ -374,7 +373,6 @@ export default function Hero() {
           </motion.div>
         </div>
 
-        {/* ─── Visual ─── */}
         <motion.div
           initial={{ opacity: 0, scale: 0.94, y: 18 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -393,7 +391,6 @@ export default function Hero() {
             <div className="absolute inset-x-0 bottom-0 h-1/3 bg-linear-to-t from-black/30 to-transparent" />
           </div>
 
-          {/* Floating rating card */}
           <motion.div
             initial={{ opacity: 0, x: -18, y: 10 }}
             animate={{ opacity: 1, x: 0, y: 0 }}
@@ -410,7 +407,6 @@ export default function Hero() {
             </p>
           </motion.div>
 
-          {/* Floating "Live service" card */}
           <motion.div
             initial={{ opacity: 0, x: 18, y: 10 }}
             animate={{ opacity: 1, x: 0, y: 0 }}
@@ -432,7 +428,6 @@ export default function Hero() {
         </motion.div>
       </div>
 
-      {/* micro guarantee strip */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
