@@ -1,4 +1,4 @@
-import { Routes, Route, Link } from "react-router-dom";
+import { Routes, Route, Link, useLocation } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
 import Services from "@/components/Services";
@@ -13,6 +13,9 @@ import PrivacyPolicy from "@/pages/PrivacyPolicy";
 import TermsOfService from "@/pages/TermsOfService";
 import RefundPolicy from "@/pages/RefundPolicy";
 import AIFAQ from "@/components/AIFAQ";
+
+// Import your new Admin component
+import Admin from "@/components/Admin";
 
 /**
  * Home — the main landing page with all sections.
@@ -52,6 +55,16 @@ function NotFound() {
 }
 
 export default function App() {
+  const location = useLocation();
+  
+  // Intercept the render if the user is trying to access the admin CRM
+  const isAdmin = location.pathname === '/admin' || location.hash === '#admin';
+
+  if (isAdmin) {
+    return <Admin />;
+  }
+
+  // Standard public layout
   return (
     <div className="relative min-h-screen bg-white pb-20 sm:pb-0">
       <Navbar />
