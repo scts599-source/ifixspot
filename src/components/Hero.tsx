@@ -283,7 +283,7 @@ export default function Hero() {
                       required
                     />
                     <label htmlFor="premium-agreement" className="text-xs text-zinc-500 leading-relaxed cursor-pointer">
-                      I understand that iFixSpot uses genuine parts affiliated by Apple and I agree to a standard diagnostic fee.
+                      I understand that iFixSpot uses genuine parts affiliated by Apple.
                     </label>
                   </div>
 
