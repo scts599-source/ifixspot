@@ -59,8 +59,8 @@ function stagger(i: number): Variants {
 
 const trust = [
   { icon: Star, label: "4.9★ Google" },
-  { icon: Clock, label: "30-min service" },
-  { icon: ShieldCheck, label: "6-month warranty" },
+  { icon: ShieldCheck, label: "100% Original Parts" },
+  { icon: Clock, label: "1-Year Warranty" },
 ];
 
 export default function Hero() {
@@ -166,19 +166,19 @@ export default function Hero() {
             variants={stagger(1)}
             initial="hidden"
             animate="show"
-            className="font-display mt-5 text-balance text-[2.6rem] font-extrabold leading-[1.02] tracking-tight text-ink sm:text-6xl"
+            className="font-display mt-5 text-balance text-4xl font-extrabold leading-[1.08] tracking-tight text-ink sm:text-6xl"
           >
-            Premium iOS Device &amp; Smartphone Hardware Service in{" "}
-            <span className="dki-loc">Kalyan Nagar</span>
+            Premium iPhone Repair. <br className="hidden sm:block" />
+            <span className="text-red-600">Fixed in 30 Minutes.</span>
           </motion.h1>
 
           <motion.p
             variants={stagger(2)}
             initial="hidden"
             animate="show"
-            className="mt-6 max-w-md text-lg leading-relaxed text-zinc-500"
+            className="mt-5 max-w-md text-base leading-relaxed text-zinc-600 font-medium sm:text-lg"
           >
-            Physical component replacement and diagnostics performed in front of you. 100% data privacy preserved.
+            Don't risk your phone with cheap components. We use 100% original Apple parts with a 1-year brand warranty, right here in Kalyan Nagar.
           </motion.p>
 
           <motion.div
@@ -192,6 +192,19 @@ export default function Hero() {
                 onSubmit={handleSubmit}
                 className="overflow-hidden rounded-3xl border border-black/5 bg-white p-5 shadow-xl shadow-black/5 sm:p-6"
               >
+                {/* --- NEW: Micro Trust Banner --- */}
+                <div className="mb-5 flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-zinc-100 pb-4 text-[11px] font-bold uppercase tracking-wider text-zinc-600 sm:text-[12px]">
+                  <span className="flex items-center gap-1 whitespace-nowrap">
+                    <Check className="h-3.5 w-3.5 text-green-500" strokeWidth={3} /> 100% Original Parts
+                  </span>
+                  <span className="flex items-center gap-1 whitespace-nowrap">
+                    <Check className="h-3.5 w-3.5 text-green-500" strokeWidth={3} /> 1-Year Warranty
+                  </span>
+                  <span className="flex items-center gap-1 whitespace-nowrap">
+                    <Check className="h-3.5 w-3.5 text-green-500" strokeWidth={3} /> 30-Min Fix
+                  </span>
+                </div>
+                {/* ------------------------------- */}
                 <div className="mb-4 flex items-center justify-between">
                   <div>
                     <h3 className="font-display text-lg font-extrabold text-ink">

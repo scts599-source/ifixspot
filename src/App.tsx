@@ -13,6 +13,7 @@ import PrivacyPolicy from "@/pages/PrivacyPolicy";
 import TermsOfService from "@/pages/TermsOfService";
 import RefundPolicy from "@/pages/RefundPolicy";
 import AIFAQ from "@/components/AIFAQ";
+import { Analytics } from "@vercel/analytics/next"
 
 // Import your new Admin component
 import Admin from "@/components/Admin";
