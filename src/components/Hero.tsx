@@ -130,13 +130,6 @@ export default function Hero() {
             { eventID: data.lead_id }
           );
         }
-
-        // 3. Optional auto-prompt to WhatsApp
-        const cleanPhone = "917022718776";
-        const text = encodeURIComponent(
-          `Hi iFixSpot, I just booked an assessment for my ${device} (${issue}). My mobile is ${mobile}.`
-        );
-        window.open(`https://wa.me/${cleanPhone}?text=${text}`, "_blank");
       } else {
         console.error("API Error:", data);
         alert("Something went wrong processing your request. Please try again.");
@@ -290,7 +283,7 @@ export default function Hero() {
                       required
                     />
                     <label htmlFor="premium-agreement" className="text-xs text-zinc-500 leading-relaxed cursor-pointer">
-                      I understand iFixSpot uses premium parts starting at ₹2,499, and I agree to a standard diagnostic fee if I proceed.
+                      I understand that iFixSpot uses genuine parts affiliated by Apple and I agree to a standard diagnostic fee.
                     </label>
                   </div>
 
