@@ -4,8 +4,6 @@ import {
   Clock, AlertCircle, ChevronRight, X, 
   LogOut, Send, ArrowLeftRight
 } from 'lucide-react';
-// IMPORTANT: Adjust this path to point to your actual Supabase client export
-import { supabase } from '../supabase'; 
 
 export interface Lead {
   id: number;
@@ -36,39 +34,46 @@ export default function CRMView({ onLogout }: CRMViewProps) {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [newNoteText, setNewNoteText] = useState('');
 
-  // Form State for Adding Leads
   const [newLeadForm, setNewLeadForm] = useState({
     name: '', phone: '', device: '', issue: '', source: 'WhatsApp' as Lead['source'], estimatedCost: ''
   });
 
-  // Fetch and Subscribe to Real-Time Supabase Data
-  useEffect(() => {
-    fetchLeads();
-
-    const channel = supabase
-      .channel('public:leads')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'leads' }, payload => {
-        fetchLeads(); // Re-fetch on any database change to keep teams synced
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, []);
-
+  // Fetch leads via API (Backend Supabase connection)
   const fetchLeads = async () => {
-    const { data, error } = await supabase
-      .from('leads')
-      .select('*')
-      .order('id', { ascending: false });
-    
-    if (!error && data) {
-      setLeads(data as Lead[]);
+    try {
+      const res = await fetch('/api/get-leads');
+      if (res.ok) {
+        const data = await res.json();
+        // Ensure sequential sorting by ID descending (newest first)
+        const sortedLeads = (data.leads || []).sort((a: Lead, b: Lead) => b.id - a.id);
+        setLeads(sortedLeads);
+      }
+    } catch (err) {
+      console.error("Failed to fetch leads");
     }
   };
 
-  // Filter for Follow-Ups: Ignores "Lost" and "Converted"
+  // Real-time Sync Simulation (Polls API every 3 seconds)
+  useEffect(() => {
+    fetchLeads();
+    const interval = setInterval(fetchLeads, 3000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Generic API Updater function
+  const updateLeadInDb = async (leadId: number, payload: Partial<Lead>) => {
+    try {
+      await fetch('/api/track-lead', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: leadId, action: 'update', payload })
+      });
+      fetchLeads(); // Immediately sync state
+    } catch (err) {
+      console.error("Failed to update lead");
+    }
+  };
+
   const dueReminders = useMemo(() => {
     const now = new Date().getTime();
     return leads.filter(l => {
@@ -78,7 +83,6 @@ export default function CRMView({ onLogout }: CRMViewProps) {
     });
   }, [leads, activeTeam]);
 
-  // Main Feed Filter
   const filteredLeads = useMemo(() => {
     return leads.filter(lead => {
       if (lead.team !== activeTeam) return false;
@@ -104,7 +108,6 @@ export default function CRMView({ onLogout }: CRMViewProps) {
     });
   }, [leads, searchQuery, activeTab, activeTeam]);
 
-  // Actions mapped to Supabase
   const handleCreateLead = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newLeadForm.name || !newLeadForm.phone) return;
@@ -112,91 +115,97 @@ export default function CRMView({ onLogout }: CRMViewProps) {
     const newEntry = {
       name: newLeadForm.name,
       phone: newLeadForm.phone,
-      device: newLeadForm.device || 'Unspecified Device',
+      device: newLeadForm.device || 'Unspecified',
       issue: newLeadForm.issue || 'Diagnostic Required',
       source: newLeadForm.source,
       status: 'New',
-      team: activeTeam, // Defaults to current dashboard team
+      team: activeTeam,
       estimatedCost: newLeadForm.estimatedCost ? Number(newLeadForm.estimatedCost) : null,
       notes: [{
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        author: activeTeam,
+        author: activeTeam.split(' ')[1].replace(/[()]/g, ''),
         text: 'Lead created manually.'
-      }],
-      createdAt: new Date().toISOString()
+      }]
     };
 
-    await supabase.from('leads').insert([newEntry]);
-    setIsAddModalOpen(false);
-    setNewLeadForm({ name: '', phone: '', device: '', issue: '', source: 'WhatsApp', estimatedCost: '' });
+    try {
+      await fetch('/api/track-lead', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'create', payload: newEntry })
+      });
+      fetchLeads();
+      setIsAddModalOpen(false);
+      setNewLeadForm({ name: '', phone: '', device: '', issue: '', source: 'WhatsApp', estimatedCost: '' });
+    } catch (err) {
+      console.error(err);
+    }
   };
 
-  const handleUpdateStatus = async (id: number, newStatus: Lead['status']) => {
+  const handleUpdateStatus = (id: number, newStatus: Lead['status']) => {
     const targetLead = leads.find(l => l.id === id);
     if (!targetLead) return;
 
     const updatedNotes = [...targetLead.notes, {
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      author: activeTeam,
+      author: activeTeam.split(' ')[1].replace(/[()]/g, ''),
       text: `Status updated to [${newStatus}]`
     }];
 
-    await supabase.from('leads').update({ status: newStatus, notes: updatedNotes }).eq('id', id);
-
+    updateLeadInDb(id, { status: newStatus, notes: updatedNotes });
     if (selectedLead && selectedLead.id === id) {
       setSelectedLead({ ...selectedLead, status: newStatus, notes: updatedNotes });
     }
   };
 
-  const handleAddNote = async (id: number) => {
+  const handleAddNote = (id: number) => {
     if (!newNoteText.trim() || !selectedLead) return;
     
     const newNote = {
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      author: activeTeam,
+      author: activeTeam.split(' ')[1].replace(/[()]/g, ''),
       text: newNoteText.trim()
     };
 
     const updatedNotes = [...selectedLead.notes, newNote];
-    await supabase.from('leads').update({ notes: updatedNotes }).eq('id', id);
+    updateLeadInDb(id, { notes: updatedNotes });
     setSelectedLead({ ...selectedLead, notes: updatedNotes });
     setNewNoteText('');
   };
 
-  const handleSaveVisitDetails = async (id: number, visitDate: string, reminderDate: string) => {
+  const handleSaveVisitDetails = (id: number, visitDate: string, reminderDate: string) => {
     const targetLead = leads.find(l => l.id === id);
     if (!targetLead) return;
 
     const newStatus = visitDate ? 'Visit Scheduled' : targetLead.status;
     const updatedNotes = [...targetLead.notes, {
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      author: activeTeam,
+      author: activeTeam.split(' ')[1].replace(/[()]/g, ''),
       text: `Scheduled visit: ${visitDate || 'N/A'}. Reminder: ${reminderDate || 'N/A'}.`
     }];
 
-    await supabase.from('leads').update({
+    updateLeadInDb(id, {
       visitDate: visitDate || targetLead.visitDate,
       followUpReminder: reminderDate || targetLead.followUpReminder,
       status: newStatus,
       notes: updatedNotes
-    }).eq('id', id);
-
+    });
     setSelectedLead(null);
   };
 
-  const handleTransferLead = async (id: number, currentTeam: string) => {
+  const handleTransferLead = (id: number, currentTeam: string) => {
     const targetTeam = currentTeam === 'Team 1 (Prajwal)' ? 'Team 2 (Rayyan)' : 'Team 1 (Prajwal)';
     const targetLead = leads.find(l => l.id === id);
     if (!targetLead) return;
 
     const updatedNotes = [...targetLead.notes, {
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      author: activeTeam,
+      author: activeTeam.split(' ')[1].replace(/[()]/g, ''),
       text: `Lead transferred to ${targetTeam}.`
     }];
 
-    await supabase.from('leads').update({ team: targetTeam, notes: updatedNotes }).eq('id', id);
-    setSelectedLead(null); // Close modal as it moved to another dashboard
+    updateLeadInDb(id, { team: targetTeam, notes: updatedNotes });
+    setSelectedLead(null);
   };
 
   return (
@@ -209,8 +218,8 @@ export default function CRMView({ onLogout }: CRMViewProps) {
             onChange={(e) => setActiveTeam(e.target.value as any)}
             className="bg-transparent text-base font-bold tracking-tight text-white focus:outline-none appearance-none"
           >
-            <option value="Team 1 (Prajwal)" className="bg-zinc-900">Dashboard: Team 1 (Prajwal)</option>
-            <option value="Team 2 (Rayyan)" className="bg-zinc-900">Dashboard: Team 2 (Rayyan)</option>
+            <option value="Team 1 (Prajwal)" className="bg-zinc-900">Dashboard: Prajwal</option>
+            <option value="Team 2 (Rayyan)" className="bg-zinc-900">Dashboard: Rayyan</option>
           </select>
         </div>
 
@@ -223,7 +232,7 @@ export default function CRMView({ onLogout }: CRMViewProps) {
         <div className="bg-gradient-to-r from-amber-500/20 to-orange-500/20 border-b border-amber-500/40 px-4 py-2.5 flex items-center justify-between text-xs text-amber-200">
           <div className="flex items-center gap-2">
             <AlertCircle className="w-4 h-4 text-amber-400 animate-bounce" />
-            <span><strong>{dueReminders.length} follow-up(s)</strong> due for {activeTeam.split(' ')[1]}.</span>
+            <span><strong>{dueReminders.length} follow-up(s)</strong> due for {activeTeam.split(' ')[1].replace(/[()]/g, '')}.</span>
           </div>
           <button onClick={() => setActiveTab('FollowUpDue')} className="underline font-semibold text-amber-300">View</button>
         </div>
@@ -318,7 +327,7 @@ export default function CRMView({ onLogout }: CRMViewProps) {
         </button>
       </div>
 
-      {/* Selected Lead Detailed View Modal */}
+      {/* Selected Lead Modal */}
       {selectedLead && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex flex-col justify-end p-0 sm:p-4 animate-fadeIn">
           <div className="bg-zinc-900 border border-zinc-800 w-full sm:max-w-lg rounded-t-3xl sm:rounded-3xl max-h-[90vh] overflow-y-auto p-6 space-y-6 mx-auto">
@@ -333,7 +342,6 @@ export default function CRMView({ onLogout }: CRMViewProps) {
               </button>
             </div>
 
-            {/* Quick Contact & Transfer Actions */}
             <div className="flex items-center gap-2">
               <a href={`tel:${selectedLead.phone}`} className="flex-1 py-2 rounded-xl bg-zinc-800 text-xs font-semibold flex items-center justify-center gap-1.5 text-zinc-200">
                 <Phone className="w-3.5 h-3.5 text-emerald-400" /> Call
@@ -341,7 +349,7 @@ export default function CRMView({ onLogout }: CRMViewProps) {
               <a href={`https://wa.me/91${selectedLead.phone}`} target="_blank" rel="noreferrer" className="flex-1 py-2 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-xs font-semibold flex items-center justify-center gap-1.5 text-emerald-300">
                 <MessageSquare className="w-3.5 h-3.5 text-emerald-400" /> WhatsApp
               </a>
-              <button onClick={() => handleTransferLead(selectedLead.id, selectedLead.team)} className="px-3 py-2 rounded-xl bg-zinc-800 text-zinc-400 hover:text-white" title={`Transfer to ${selectedLead.team === 'Team 1 (Prajwal)' ? 'Rayyan' : 'Prajwal'}`}>
+              <button onClick={() => handleTransferLead(selectedLead.id, selectedLead.team)} className="px-3 py-2 rounded-xl bg-zinc-800 text-zinc-400 hover:text-white" title="Transfer Lead">
                 <ArrowLeftRight className="w-4 h-4 text-purple-400" />
               </button>
             </div>
@@ -390,10 +398,10 @@ export default function CRMView({ onLogout }: CRMViewProps) {
             <div>
               <label className="block text-xs font-semibold uppercase text-zinc-400 mb-2">Conversation Log</label>
               <div className="space-y-2 max-h-40 overflow-y-auto mb-3 pr-1">
-                {selectedLead.notes.map((n, i) => (
+                {selectedLead.notes && selectedLead.notes.map((n, i) => (
                   <div key={i} className="p-2.5 rounded-xl bg-zinc-800/40 border border-zinc-800 text-xs space-y-1">
                     <div className="flex justify-between text-[10px] text-zinc-500">
-                      <span className="font-semibold text-zinc-400">{n.author.split(' ')[1]}</span>
+                      <span className="font-semibold text-zinc-400">{n.author}</span>
                       <span>{n.timestamp}</span>
                     </div>
                     <p className="text-zinc-300">{n.text}</p>
@@ -417,7 +425,7 @@ export default function CRMView({ onLogout }: CRMViewProps) {
         </div>
       )}
 
-      {/* Manual Entry Modal */}
+      {/* Add Lead Modal */}
       {isAddModalOpen && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex flex-col justify-end p-0 sm:p-4 animate-fadeIn">
           <div className="bg-zinc-900 border border-zinc-800 w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl p-6 space-y-4 mx-auto">
@@ -430,7 +438,7 @@ export default function CRMView({ onLogout }: CRMViewProps) {
 
             <form onSubmit={handleCreateLead} className="space-y-3.5">
               <div>
-                <label className="block text-xs text-zinc-400 mb-1">Customer Full Name *</label>
+                <label className="block text-xs text-zinc-400 mb-1">Customer Name *</label>
                 <input type="text" required value={newLeadForm.name} onChange={e => setNewLeadForm({ ...newLeadForm, name: e.target.value })} className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2.5 text-xs text-white" />
               </div>
               <div>
@@ -453,7 +461,7 @@ export default function CRMView({ onLogout }: CRMViewProps) {
                 </div>
               </div>
               <div>
-                <label className="block text-xs text-zinc-400 mb-1">Issue / Service Required</label>
+                <label className="block text-xs text-zinc-400 mb-1">Issue</label>
                 <textarea rows={2} value={newLeadForm.issue} onChange={e => setNewLeadForm({ ...newLeadForm, issue: e.target.value })} className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2.5 text-xs text-white" />
               </div>
               <button type="submit" className="w-full py-3.5 rounded-xl bg-cyan-500 text-black font-bold text-xs shadow-lg active:scale-[0.98]">
