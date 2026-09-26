@@ -1,86 +1,87 @@
-import { Routes, Route, Link, useLocation } from "react-router-dom";
-import Navbar from "@/components/Navbar";
-import Hero from "@/components/Hero";
-import Services from "@/components/Services";
-import WhyChooseUs from "@/components/WhyChooseUs";
-import FAQ from "@/components/FAQ";
-import Reviews from "@/components/Reviews";
-import Location from "@/components/Location";
-import FinalCTA from "@/components/FinalCTA";
-import Footer from "@/components/Footer";
-import FloatingButtons from "@/components/FloatingButtons";
-import PrivacyPolicy from "@/pages/PrivacyPolicy";
-import TermsOfService from "@/pages/TermsOfService";
-import RefundPolicy from "@/pages/RefundPolicy";
-import AIFAQ from "@/components/AIFAQ";
-import { Analytics } from "@vercel/analytics/next"
+import React, { useState, useEffect } from 'react';
+import CRMView from './components/CRMView';
+import CRMLogin from './components/CRMLogin';
+// Import your existing landing page components here (Hero, Services, BookingForm, Footer, etc.)
 
-// Import your new Admin component
-import Admin from "@/components/Admin";
-
-/**
- * Home — the main landing page with all sections.
- * Focused flow: Hero (form) → Services → Trust → FAQ → Reviews → Location → Final CTA
- */
-function Home() {
-  return (
-    <>
-      <Hero />
-      <Services />
-      <WhyChooseUs />
-      <FAQ />
-      <Reviews />
-      <Location />
-      <FinalCTA />
-    </>
-  );
-}
-
-/**
- * 404 — Fallback for any unknown route.
- * Reuses the same layout; visitors are funneled to the booking flow.
- */
-function NotFound() {
-  return (
-    <section className="flex min-h-[60vh] flex-col items-center justify-center text-center px-5">
-      <h1 className="font-display text-6xl font-extrabold text-ink">404</h1>
-      <p className="mt-4 text-lg text-zinc-500">Page not found</p>
-      <Link
-        to="/"
-        className="mt-6 rounded-full bg-ink px-7 py-3.5 text-[15px] font-semibold text-white"
-      >
-        Go back home
-      </Link>
-    </section>
-  );
+export interface Lead {
+  id: string;
+  name: string;
+  phone: string;
+  device: string;
+  issue: string;
+  source: 'Website Form' | 'WhatsApp' | 'Meta Ad' | 'Walk-in';
+  status: 'New' | 'Contacted' | 'Visit Scheduled' | 'In Progress' | 'Converted' | 'Lost';
+  visitDate?: string;
+  followUpReminder?: string;
+  notes: Array<{ timestamp: string; repName: string; text: string }>;
+  estimatedCost?: number;
+  createdAt: string;
 }
 
 export default function App() {
-  const location = useLocation();
-  
-  // Intercept the render if the user is trying to access the admin CRM
-  const isAdmin = location.pathname === '/admin' || location.hash === '#admin';
+  const [currentHash, setCurrentHash] = useState<string>(window.location.hash);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
+    return localStorage.getItem('ifix_crm_auth') === 'true';
+  });
 
-  if (isAdmin) {
-    return <Admin />;
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash;
+      // Backward compatibility redirects
+      if (hash === '#admin' || hash === '#leads') {
+        window.location.hash = '#crm';
+      } else {
+        setCurrentHash(hash);
+      }
+    };
+
+    window.addEventListener('hashchange', handleHashChange);
+    handleHashChange();
+
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem('ifix_crm_auth');
+    setIsAuthenticated(false);
+  };
+
+  // Dedicated CRM Route
+  if (currentHash === '#crm') {
+    if (!isAuthenticated) {
+      return <CRMLogin onLoginSuccess={() => setIsAuthenticated(true)} />;
+    }
+    return <CRMView onLogout={handleLogout} />;
   }
 
-  // Standard public layout
+  // Default: Public Facing Landing Page
   return (
-    <div className="relative min-h-screen bg-white pb-20 sm:pb-0">
-      <Navbar />
+    <div className="min-h-screen bg-zinc-950 text-zinc-100 font-sans antialiased selection:bg-cyan-500 selection:text-black">
+      {/* Existing Header / Nav */}
       <main>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-          <Route path="/terms-of-service" element={<TermsOfService />} />
-          <Route path="/warranty-refund-policy" element={<RefundPolicy />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        {/* Your Existing Hero, Services Grid, Diagnostic Table */}
+        
+        {/* Example: When users submit your existing website form, call this handler: */}
+        {/* 
+            const handleFormSubmit = (data) => {
+              const existing = JSON.parse(localStorage.getItem('ifix_crm_leads') || '[]');
+              const newLead: Lead = {
+                id: 'LEAD-' + Date.now().toString().slice(-5),
+                name: data.name,
+                phone: data.phone,
+                device: data.device,
+                issue: data.issue,
+                source: 'Website Form',
+                status: 'New',
+                notes: [{ timestamp: new Date().toISOString(), repName: 'System', text: 'Lead captured from Website Booking Form.' }],
+                createdAt: new Date().toISOString()
+              };
+              localStorage.setItem('ifix_crm_leads', JSON.stringify([newLead, ...existing]));
+            };
+        */}
       </main>
-      <AIFAQ />
-      <Footer />
-      <FloatingButtons />
+      
+      {/* Existing Footer */}
     </div>
   );
 }
