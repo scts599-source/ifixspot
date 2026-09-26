@@ -4,7 +4,7 @@ import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 import { viteSingleFile } from "vite-plugin-singlefile";
-import Sitemap from "vite-plugin-sitemap";
+// import Sitemap from "vite-plugin-sitemap";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -16,6 +16,7 @@ export default defineConfig({
     react(),
     tailwindcss(),
     viteSingleFile(),
+    /* 
     Sitemap({
       hostname: "https://ifixspot.com",
       dynamicRoutes: [
@@ -24,6 +25,7 @@ export default defineConfig({
         "/warranty-refund-policy",
       ],
     }),
+    */
   ],
   resolve: {
     alias: {
