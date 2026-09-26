@@ -1,33 +1,76 @@
-import React, { useState, useEffect } from 'react';
-import CRMView from './components/CRMView';
-import CRMLogin from './components/CRMLogin';
+import React, { useState } from "react";
+import { Routes, Route, Link, useLocation } from "react-router-dom";
+import Navbar from "@/components/Navbar";
+import Hero from "@/components/Hero";
+import Services from "@/components/Services";
+import WhyChooseUs from "@/components/WhyChooseUs";
+import FAQ from "@/components/FAQ";
+import Reviews from "@/components/Reviews";
+import Location from "@/components/Location";
+import FinalCTA from "@/components/FinalCTA";
+import Footer from "@/components/Footer";
+import FloatingButtons from "@/components/FloatingButtons";
+import PrivacyPolicy from "@/pages/PrivacyPolicy";
+import TermsOfService from "@/pages/TermsOfService";
+import RefundPolicy from "@/pages/RefundPolicy";
+import AIFAQ from "@/components/AIFAQ";
+import { Analytics } from "@vercel/analytics/next";
 
-// 1. IMPORT YOUR ORIGINAL WEBSITE COMPONENTS HERE
-// e.g., import Navbar from './components/Navbar';
-// e.g., import Hero from './components/Hero';
+// Import your new CRM components
+import CRMView from "@/components/CRMView";
+import CRMLogin from "@/components/CRMLogin";
+
+/**
+ * Home — the main landing page with all sections.
+ * Focused flow: Hero (form) → Services → Trust → FAQ → Reviews → Location → Final CTA
+ */
+function Home() {
+  return (
+    <>
+      <Hero />
+      <Services />
+      <WhyChooseUs />
+      <FAQ />
+      <Reviews />
+      <Location />
+      <FinalCTA />
+    </>
+  );
+}
+
+/**
+ * 404 — Fallback for any unknown route.
+ * Reuses the same layout; visitors are funneled to the booking flow.
+ */
+function NotFound() {
+  return (
+    <section className="flex min-h-[60vh] flex-col items-center justify-center text-center px-5">
+      <h1 className="font-display text-6xl font-extrabold text-ink">404</h1>
+      <p className="mt-4 text-lg text-zinc-500">Page not found</p>
+      <Link
+        to="/"
+        className="mt-6 rounded-full bg-ink px-7 py-3.5 text-[15px] font-semibold text-white"
+      >
+        Go back home
+      </Link>
+    </section>
+  );
+}
 
 export default function App() {
-  const [currentHash, setCurrentHash] = useState<string>(window.location.hash);
+  const location = useLocation();
+  
+  // Manage CRM Authentication State
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
     return localStorage.getItem('ifix_crm_auth') === 'true';
   });
+  
+  // Intercept the render if the user is trying to access the CRM or legacy admin paths
+  const isCRM = 
+    location.pathname === '/crm' || location.hash === '#crm' || 
+    location.pathname === '/admin' || location.hash === '#admin';
 
-  useEffect(() => {
-    const handleHashChange = () => {
-      const hash = window.location.hash;
-      if (hash === '#admin' || hash === '#leads') {
-        window.location.hash = '#crm';
-      } else {
-        setCurrentHash(hash);
-      }
-    };
-    window.addEventListener('hashchange', handleHashChange);
-    handleHashChange();
-    return () => window.removeEventListener('hashchange', handleHashChange);
-  }, []);
-
-  // --- CRM ROUTING ---
-  if (currentHash === '#crm') {
+  if (isCRM) {
     if (!isAuthenticated) {
       return <CRMLogin onLoginSuccess={() => setIsAuthenticated(true)} />;
     }
@@ -37,16 +80,22 @@ export default function App() {
     }} />;
   }
 
-  // --- PUBLIC WEBSITE ROUTING ---
+  // Standard public layout
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 font-sans antialiased">
-      
-      {/* 2. PASTE YOUR ACTUAL WEBSITE CODE HERE */}
-      {/* <Navbar /> */}
-      {/* <Hero /> */}
-      {/* <ServicesGrid /> */}
-      {/* <Footer /> */}
-
+    <div className="relative min-h-screen bg-white pb-20 sm:pb-0">
+      <Navbar />
+      <main>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+          <Route path="/terms-of-service" element={<TermsOfService />} />
+          <Route path="/warranty-refund-policy" element={<RefundPolicy />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </main>
+      <AIFAQ />
+      <Footer />
+      <FloatingButtons />
     </div>
   );
 }
