@@ -38,13 +38,11 @@ export default function CRMView({ onLogout }: CRMViewProps) {
     name: '', phone: '', device: '', issue: '', source: 'WhatsApp' as Lead['source'], estimatedCost: ''
   });
 
-  // Fetch leads via API (Backend Supabase connection)
   const fetchLeads = async () => {
     try {
       const res = await fetch('/api/get-leads');
       if (res.ok) {
         const data = await res.json();
-        // Ensure sequential sorting by ID descending (newest first)
         const sortedLeads = (data.leads || []).sort((a: Lead, b: Lead) => b.id - a.id);
         setLeads(sortedLeads);
       }
@@ -53,14 +51,12 @@ export default function CRMView({ onLogout }: CRMViewProps) {
     }
   };
 
-  // Real-time Sync Simulation (Polls API every 3 seconds)
   useEffect(() => {
     fetchLeads();
     const interval = setInterval(fetchLeads, 3000);
     return () => clearInterval(interval);
   }, []);
 
-  // Generic API Updater function
   const updateLeadInDb = async (leadId: number, payload: Partial<Lead>) => {
     try {
       await fetch('/api/track-lead', {
@@ -68,7 +64,7 @@ export default function CRMView({ onLogout }: CRMViewProps) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: leadId, action: 'update', payload })
       });
-      fetchLeads(); // Immediately sync state
+      fetchLeads();
     } catch (err) {
       console.error("Failed to update lead");
     }
@@ -83,15 +79,22 @@ export default function CRMView({ onLogout }: CRMViewProps) {
     });
   }, [leads, activeTeam]);
 
+  // Safe Filter with Fallbacks to prevent undefined crashes
   const filteredLeads = useMemo(() => {
     return leads.filter(lead => {
       if (lead.team !== activeTeam) return false;
 
+      const nameStr = (lead.name || '').toLowerCase();
+      const phoneStr = (lead.phone || '').toLowerCase();
+      const deviceStr = (lead.device || '').toLowerCase();
+      const idStr = (lead.id || '').toString();
+      const query = searchQuery.toLowerCase();
+
       const matchesSearch = 
-        lead.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        lead.phone.includes(searchQuery) ||
-        lead.device.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        lead.id.toString().includes(searchQuery);
+        nameStr.includes(query) ||
+        phoneStr.includes(query) ||
+        deviceStr.includes(query) ||
+        idStr.includes(query);
 
       if (!matchesSearch) return false;
 
@@ -146,7 +149,7 @@ export default function CRMView({ onLogout }: CRMViewProps) {
     const targetLead = leads.find(l => l.id === id);
     if (!targetLead) return;
 
-    const updatedNotes = [...targetLead.notes, {
+    const updatedNotes = [...(targetLead.notes || []), {
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       author: activeTeam.split(' ')[1].replace(/[()]/g, ''),
       text: `Status updated to [${newStatus}]`
@@ -167,7 +170,7 @@ export default function CRMView({ onLogout }: CRMViewProps) {
       text: newNoteText.trim()
     };
 
-    const updatedNotes = [...selectedLead.notes, newNote];
+    const updatedNotes = [...(selectedLead.notes || []), newNote];
     updateLeadInDb(id, { notes: updatedNotes });
     setSelectedLead({ ...selectedLead, notes: updatedNotes });
     setNewNoteText('');
@@ -178,7 +181,7 @@ export default function CRMView({ onLogout }: CRMViewProps) {
     if (!targetLead) return;
 
     const newStatus = visitDate ? 'Visit Scheduled' : targetLead.status;
-    const updatedNotes = [...targetLead.notes, {
+    const updatedNotes = [...(targetLead.notes || []), {
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       author: activeTeam.split(' ')[1].replace(/[()]/g, ''),
       text: `Scheduled visit: ${visitDate || 'N/A'}. Reminder: ${reminderDate || 'N/A'}.`
@@ -198,7 +201,7 @@ export default function CRMView({ onLogout }: CRMViewProps) {
     const targetLead = leads.find(l => l.id === id);
     if (!targetLead) return;
 
-    const updatedNotes = [...targetLead.notes, {
+    const updatedNotes = [...(targetLead.notes || []), {
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       author: activeTeam.split(' ')[1].replace(/[()]/g, ''),
       text: `Lead transferred to ${targetTeam}.`
@@ -288,8 +291,8 @@ export default function CRMView({ onLogout }: CRMViewProps) {
               >
                 <div className="flex items-start justify-between mb-2">
                   <div>
-                    <span className="text-[10px] font-mono tracking-wider uppercase text-zinc-500">ID: {lead.id} • {lead.source}</span>
-                    <h3 className="text-base font-bold text-zinc-100">{lead.name}</h3>
+                    <span className="text-[10px] font-mono tracking-wider uppercase text-zinc-500">ID: {lead.id} • {lead.source || 'Website'}</span>
+                    <h3 className="text-base font-bold text-zinc-100">{lead.name || 'Unnamed Lead'}</h3>
                   </div>
                   <span className={`text-[11px] font-medium px-2.5 py-1 rounded-full border ${
                     lead.status === 'Converted' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' :
@@ -298,12 +301,12 @@ export default function CRMView({ onLogout }: CRMViewProps) {
                     lead.status === 'New' ? 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30' :
                     'bg-zinc-800 text-zinc-400 border-zinc-700'
                   }`}>
-                    {lead.status}
+                    {lead.status || 'New'}
                   </span>
                 </div>
 
                 <div className="text-xs text-zinc-300 font-medium mb-1">
-                  {lead.device} — <span className="text-zinc-400 font-normal">{lead.issue}</span>
+                  {lead.device || 'Device N/A'} — <span className="text-zinc-400 font-normal">{lead.issue || 'No notes'}</span>
                 </div>
 
                 {lead.visitDate && (
@@ -334,8 +337,8 @@ export default function CRMView({ onLogout }: CRMViewProps) {
             <div className="flex items-start justify-between">
               <div>
                 <span className="text-xs font-mono text-zinc-500">Lead ID: {selectedLead.id}</span>
-                <h2 className="text-xl font-bold text-white">{selectedLead.name}</h2>
-                <p className="text-xs text-zinc-400 mt-0.5">{selectedLead.phone} • {selectedLead.device}</p>
+                <h2 className="text-xl font-bold text-white">{selectedLead.name || 'Unnamed Lead'}</h2>
+                <p className="text-xs text-zinc-400 mt-0.5">{selectedLead.phone || 'No phone'} • {selectedLead.device || 'No device'}</p>
               </div>
               <button onClick={() => setSelectedLead(null)} className="p-1 rounded-full bg-zinc-800 text-zinc-400 hover:text-white">
                 <X className="w-5 h-5" />
@@ -398,13 +401,13 @@ export default function CRMView({ onLogout }: CRMViewProps) {
             <div>
               <label className="block text-xs font-semibold uppercase text-zinc-400 mb-2">Conversation Log</label>
               <div className="space-y-2 max-h-40 overflow-y-auto mb-3 pr-1">
-                {selectedLead.notes && selectedLead.notes.map((n, i) => (
+                {(selectedLead.notes || []).map((n, i) => (
                   <div key={i} className="p-2.5 rounded-xl bg-zinc-800/40 border border-zinc-800 text-xs space-y-1">
                     <div className="flex justify-between text-[10px] text-zinc-500">
-                      <span className="font-semibold text-zinc-400">{n.author}</span>
-                      <span>{n.timestamp}</span>
+                      <span className="font-semibold text-zinc-400">{n.author || 'System'}</span>
+                      <span>{n.timestamp || ''}</span>
                     </div>
-                    <p className="text-zinc-300">{n.text}</p>
+                    <p className="text-zinc-300">{n.text || ''}</p>
                   </div>
                 ))}
               </div>
