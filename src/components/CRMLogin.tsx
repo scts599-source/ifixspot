@@ -19,7 +19,6 @@ export default function CRMLogin({ onLoginSuccess }: CRMLoginProps) {
     setTimeout(() => {
       // Updated credentials per requirements
       if (username.trim() === 'ifixspot@leads' && password === 'ifixspot@kalyan-nagar6432') {
-        localStorage.setItem('ifix_crm_auth', 'true');
         onLoginSuccess();
       } else {
         setError('Invalid credentials. Access denied.');

@@ -60,9 +60,7 @@ export default function App() {
   const location = useLocation();
   
   // Manage CRM Authentication State
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
-    return localStorage.getItem('ifix_crm_auth') === 'true';
-  });
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   
   // Intercept the render if the user is trying to access the CRM or legacy admin paths
   const isCRM = 
@@ -74,7 +72,6 @@ export default function App() {
       return <CRMLogin onLoginSuccess={() => setIsAuthenticated(true)} />;
     }
     return <CRMView onLogout={() => {
-      localStorage.removeItem('ifix_crm_auth');
       setIsAuthenticated(false);
     }} />;
   }

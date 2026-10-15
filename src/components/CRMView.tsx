@@ -2,11 +2,12 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { 
   Phone, MessageSquare, Plus, Search, Calendar, 
   Clock, AlertCircle, ChevronRight, X, 
-  LogOut, Send, ArrowLeftRight, Download, Upload
+  LogOut, Send, ArrowLeftRight, Download, Upload, Trash2
 } from 'lucide-react';
 import {
   createLocalLead,
-  exportLocalLeads,
+  clearExportedTeamLeads,
+  exportTeamLeadsCsv,
   importLocalLeads,
   listLocalLeads,
   subscribeToLocalLeadChanges,
@@ -30,6 +31,7 @@ export default function CRMView({ onLogout }: CRMViewProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [storageError, setStorageError] = useState('');
   const [backupMessage, setBackupMessage] = useState('');
+  const [pendingClear, setPendingClear] = useState<{ team: Lead['team']; ids: number[]; count: number } | null>(null);
   const importInputRef = useRef<HTMLInputElement>(null);
 
   const [newLeadForm, setNewLeadForm] = useState({
@@ -72,17 +74,38 @@ export default function CRMView({ onLogout }: CRMViewProps) {
 
   const handleExportBackup = async () => {
     try {
-      const backup = await exportLocalLeads();
-      const url = URL.createObjectURL(new Blob([backup], { type: 'application/json' }));
+      const exportData = await exportTeamLeadsCsv(activeTeam);
+      if (exportData.count === 0) {
+        setBackupMessage(`No leads to export for ${activeTeam}.`);
+        return;
+      }
+      const url = URL.createObjectURL(new Blob([exportData.csv], { type: 'text/csv;charset=utf-8' }));
       const link = document.createElement('a');
       link.href = url;
-      link.download = `ifixspot-crm-backup-${new Date().toISOString().slice(0, 10)}.json`;
+      const date = new Date().toISOString().slice(0, 10);
+      const teamFilename = activeTeam.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+      link.download = `ifixspot-leads-${teamFilename}-${date}.csv`;
       link.click();
       window.setTimeout(() => URL.revokeObjectURL(url), 1000);
-      setBackupMessage('Backup downloaded. Store it somewhere separate from this device.');
+      setPendingClear({ team: activeTeam, ids: exportData.leadIds, count: exportData.count });
+      setBackupMessage(`CSV download started for ${exportData.count} ${activeTeam} lead(s). Confirm below only after the file is saved.`);
       setStorageError('');
     } catch (error) {
-      setStorageError(error instanceof Error ? error.message : 'Could not export CRM data.');
+      setStorageError(error instanceof Error ? error.message : 'Could not export team leads.');
+    }
+  };
+
+  const handleConfirmExportClear = async () => {
+    if (!pendingClear) return;
+    const exportToClear = pendingClear;
+    try {
+      const removed = await clearExportedTeamLeads(exportToClear.team, exportToClear.ids);
+      setLeads(await listLocalLeads());
+      setPendingClear(null);
+      setBackupMessage(`Cleared ${removed} exported lead(s) for ${exportToClear.team}.`);
+      setStorageError('');
+    } catch (error) {
+      setStorageError(error instanceof Error ? error.message : 'Could not clear exported leads. The data remains in the session.');
     }
   };
 
@@ -257,7 +280,7 @@ export default function CRMView({ onLogout }: CRMViewProps) {
         </div>
 
         <div className="flex items-center gap-2">
-          <button onClick={() => void handleExportBackup()} title="Download local CRM backup" aria-label="Download local CRM backup" className="p-2 text-zinc-300 hover:text-white rounded-lg bg-zinc-800/60 border border-zinc-700/60">
+          <button onClick={() => void handleExportBackup()} title="Download this team's daily CSV" aria-label="Download this team's daily CSV" className="p-2 text-zinc-300 hover:text-white rounded-lg bg-zinc-800/60 border border-zinc-700/60">
             <Download className="w-4 h-4" />
           </button>
           <button onClick={() => importInputRef.current?.click()} title="Import backup without overwriting existing records" aria-label="Import CRM backup" className="p-2 text-zinc-300 hover:text-white rounded-lg bg-zinc-800/60 border border-zinc-700/60">
@@ -271,8 +294,21 @@ export default function CRMView({ onLogout }: CRMViewProps) {
       </header>
 
       <div className="border-b border-amber-500/20 bg-amber-500/5 px-4 py-2 text-xs text-amber-100/80">
-        Leads are stored only in this browser profile and are not encrypted at rest. Keep this device private and store downloaded backups securely. Download backups regularly. Existing remote records are untouched; export them as CSV/JSON and import here to merge without overwriting. New website inquiries go to the business inbox and do not sync into this local CRM automatically.
+        Leads are held in this tab's memory, not browser storage. A refresh or closing this tab clears new, unexported leads. Download and confirm a separate daily CSV for each team. Existing legacy browser records are loaded for migration; imported CSV/JSON files merge without overwriting. Website inquiries go to the business inbox and do not sync into this CRM automatically.
       </div>
+      {pendingClear && (
+        <div role="alertdialog" aria-label="Confirm clearing exported leads" className="border-b border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
+          <p>After confirming the downloaded CSV is saved, clear these {pendingClear.count} exported lead(s) for {pendingClear.team}?</p>
+          <div className="mt-2 flex gap-2">
+            <button onClick={() => void handleConfirmExportClear()} className="inline-flex items-center gap-1.5 rounded-lg bg-red-500/20 px-3 py-1.5 text-xs font-semibold text-red-100 hover:bg-red-500/30">
+              <Trash2 className="h-3.5 w-3.5" /> Confirm download and clear
+            </button>
+            <button onClick={() => setPendingClear(null)} className="rounded-lg bg-zinc-800 px-3 py-1.5 text-xs font-semibold text-zinc-200 hover:bg-zinc-700">
+              Keep leads
+            </button>
+          </div>
+        </div>
+      )}
       {storageError && (
         <div role="alert" className="border-b border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">
           {storageError} <button onClick={() => void fetchLeads()} className="ml-2 font-semibold underline">Retry</button>
