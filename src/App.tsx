@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Routes, Route, Link, useLocation } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
@@ -58,21 +58,37 @@ function NotFound() {
 
 export default function App() {
   const location = useLocation();
-  
-  // Manage CRM Authentication State
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  
+
   // Intercept the render if the user is trying to access the CRM or legacy admin paths
   const isCRM = 
     location.pathname === '/crm' || location.hash === '#crm' || 
     location.pathname === '/admin' || location.hash === '#admin';
+  const [authState, setAuthState] = useState<'loading' | 'authenticated' | 'unauthenticated'>('loading');
+
+  useEffect(() => {
+    if (!isCRM) return;
+    let active = true;
+    fetch('/api/auth', { credentials: 'same-origin', cache: 'no-store' })
+      .then(async (response) => response.ok ? response.json() : { authenticated: false })
+      .then((result) => {
+        if (active) setAuthState(result.authenticated ? 'authenticated' : 'unauthenticated');
+      })
+      .catch(() => {
+        if (active) setAuthState('unauthenticated');
+      });
+    return () => { active = false; };
+  }, [isCRM]);
 
   if (isCRM) {
-    if (!isAuthenticated) {
-      return <CRMLogin onLoginSuccess={() => setIsAuthenticated(true)} />;
+    if (authState === 'loading') {
+      return <div className="flex min-h-screen items-center justify-center bg-zinc-950 text-sm text-zinc-400">Checking secure CRM session…</div>;
+    }
+    if (authState !== 'authenticated') {
+      return <CRMLogin onLoginSuccess={() => setAuthState('authenticated')} />;
     }
     return <CRMView onLogout={() => {
-      setIsAuthenticated(false);
+      void fetch('/api/auth', { method: 'DELETE', credentials: 'same-origin' });
+      setAuthState('unauthenticated');
     }} />;
   }
 

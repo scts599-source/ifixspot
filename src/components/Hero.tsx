@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { motion, type Variants } from "framer-motion";
 import { Star, ShieldCheck, Clock, Check, Phone, ChevronDown } from "lucide-react";
 import heroPhone from "@/assets/hero-phone.jpg";
@@ -72,6 +72,7 @@ export default function Hero() {
   const [errors, setErrors] = useState<{ mobile?: string; pincode?: string }>({});
   const [reserved, setReserved] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const submissionIdRef = useRef("");
 
   const canSubmit = useMemo(
     () => device && issue && mobile.length === 10 && pincode.length >= 4 && agreedToPremium,
@@ -98,45 +99,68 @@ export default function Hero() {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch("https://formspree.io/f/moeqrpwg", {
+      if (!submissionIdRef.current) {
+        submissionIdRef.current = typeof crypto !== "undefined" && "randomUUID" in crypto
+          ? crypto.randomUUID()
+          : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      }
+
+      const crmRequest = fetch("/api/track-lead", {
         method: "POST",
-        headers: {
-          Accept: "application/json",
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          action: "public",
           mobile,
           device,
-          issue: issue,
+          issue,
           pincode,
-          source: "Hero Booking Form",
-          sourceUrl: window.location.href,
+          submissionId: submissionIdRef.current,
         }),
       });
+      const emailRequest = fetch("https://formspree.io/f/moeqrpwg", {
+        method: "POST",
+        headers: { Accept: "application/json", "Content-Type": "application/json" },
+        body: JSON.stringify({ mobile, device, issue, pincode, source: "Hero Booking Form", sourceUrl: window.location.href }),
+      });
+      const [crmOutcome, emailOutcome] = await Promise.allSettled([crmRequest, emailRequest]);
+      const crmResponse = crmOutcome.status === "fulfilled" ? crmOutcome.value : null;
+      const crmResult = crmResponse ? await crmResponse.json().catch(() => ({})) : {};
+      const emailResponse = emailOutcome.status === "fulfilled" ? emailOutcome.value : null;
 
-      if (response.ok) {
-        setReserved(true);
+      if (!crmResponse?.ok && !emailResponse?.ok) {
+        throw new Error(
+          typeof crmResult.error === "string"
+            ? crmResult.error
+            : "We couldn't send your request. Please call or WhatsApp us instead.",
+        );
+      }
 
-        if (typeof window !== "undefined" && (window as unknown as { fbq?: (...args: unknown[]) => void }).fbq) {
-          (window as unknown as { fbq: (...args: unknown[]) => void }).fbq(
-            "track",
-            "Lead",
-            {
-              content_name: "iPhone Hardware Service",
-              content_category: device || "iPhone",
-              value: 1.0,
-              currency: "INR",
-              status: issue
-            }
-          );
-        }
-      } else {
-        console.error("Formspree submission failed:", response.status);
-        alert("Something went wrong processing your request. Please try again.");
+      setReserved(true);
+      submissionIdRef.current = "";
+      if (!crmResponse?.ok) {
+        console.error("Form was emailed, but CRM sync failed:", crmResult);
+        alert("Your inquiry was emailed, but the team dashboard could not sync it. Please call or WhatsApp us to make sure we follow up.");
+      } else if (!emailResponse?.ok) {
+        console.warn("CRM saved the lead, but the email notification failed.");
+      }
+
+      if (crmResponse?.ok && typeof window !== "undefined" && (window as unknown as { fbq?: (...args: unknown[]) => void }).fbq) {
+        (window as unknown as { fbq: (...args: unknown[]) => void }).fbq(
+          "track",
+          "Lead",
+          {
+            content_name: "iPhone Hardware Service",
+            content_category: device || "iPhone",
+            value: 1.0,
+            currency: "INR",
+            status: issue,
+          },
+          { eventID: crmResult.lead_id },
+        );
       }
     } catch (error) {
-      console.error("Network Error:", error);
-      alert("Network error. Please try again.");
+      console.error("Lead submission error:", error);
+      alert(error instanceof Error ? error.message : "Unable to submit right now. Please try again.");
     } finally {
       setIsSubmitting(false);
     }

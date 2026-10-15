@@ -11,20 +11,29 @@ export default function CRMLogin({ onLoginSuccess }: CRMLoginProps) {
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setIsSubmitting(true);
 
-    setTimeout(() => {
-      // Updated credentials per requirements
-      if (username.trim() === 'ifixspot@leads' && password === 'ifixspot@kalyan-nagar6432') {
+      try {
+        const response = await fetch('/api/auth', {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: username.trim(), password }),
+        });
+        const result = await response.json().catch(() => ({}));
+        if (response.ok && result.authenticated) {
         onLoginSuccess();
       } else {
-        setError('Invalid credentials. Access denied.');
+          setError(result.error || 'Invalid credentials. Access denied.');
       }
+      } catch {
+        setError('CRM server unavailable. Check your connection and try again.');
+      } finally {
       setIsSubmitting(false);
-    }, 400);
+      }
   };
 
   return (

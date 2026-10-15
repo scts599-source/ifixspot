@@ -28,6 +28,7 @@ export interface Lead {
   notes: LeadNote[];
   estimatedCost?: number;
   createdAt: string;
+  pincode?: string;
   importKey?: string;
 }
 
@@ -35,178 +36,47 @@ export type NewLead = Omit<Lead, "id" | "createdAt" | "importKey"> & {
   createdAt?: string;
 };
 
-const LEGACY_DATABASE_NAME = "ifixspot-crm-local";
-const LEGACY_STORE_NAME = "leads";
-const MAX_IMPORT_BYTES = 20 * 1024 * 1024;
+async function apiRequest<T>(url: string, init?: RequestInit): Promise<T> {
+  const response = await fetch(url, {
+    credentials: "same-origin",
+    cache: "no-store",
+    ...init,
+    headers: {
+      ...(init?.body ? { "Content-Type": "application/json" } : {}),
+      ...init?.headers,
+    },
+  });
+  const result = await response.json().catch(() => ({})) as Record<string, unknown>;
+  if (!response.ok) {
+    if (response.status === 401) throw new Error("CRM session expired. Sign in again.");
+    throw new Error(typeof result.error === "string" ? result.error : `CRM request failed (${response.status}).`);
+  }
+  return result as T;
+}
 
-let sessionLeads: Lead[] | undefined;
-let initializePromise: Promise<void> | undefined;
-let nextId = 1;
+export async function listLocalLeads(): Promise<Lead[]> {
+  const result = await apiRequest<{ leads: Lead[] }>("/api/get-leads");
+  return (result.leads ?? []).sort((left, right) => right.id - left.id);
+}
 
-function notifyLeadsChanged(): void {
-  window.dispatchEvent(new Event("ifixspot:leads-changed"));
+export async function createLocalLead(input: NewLead): Promise<Lead> {
+  const result = await apiRequest<{ lead: Lead }>("/api/track-lead", {
+    method: "POST",
+    body: JSON.stringify({ action: "create", payload: input }),
+  });
+  return result.lead;
+}
+
+export async function updateLocalLead(id: number, changes: Partial<Lead>): Promise<Lead> {
+  const result = await apiRequest<{ lead: Lead }>("/api/track-lead", {
+    method: "POST",
+    body: JSON.stringify({ action: "update", id, payload: changes }),
+  });
+  return result.lead;
 }
 
 function textValue(value: unknown, fallback = ""): string {
   return typeof value === "string" ? value.trim() : value == null ? fallback : String(value);
-}
-
-async function openExistingLegacyDatabase(): Promise<IDBDatabase | null> {
-  if (typeof indexedDB === "undefined") return null;
-  return new Promise((resolve, reject) => {
-    const request = indexedDB.open(LEGACY_DATABASE_NAME);
-    let wasMissing = false;
-
-    request.onupgradeneeded = () => {
-      wasMissing = true;
-      request.transaction?.abort();
-    };
-    request.onerror = () => {
-      if (wasMissing) resolve(null);
-      else reject(request.error ?? new Error("Could not read legacy browser CRM data."));
-    };
-    request.onsuccess = () => {
-      const database = request.result;
-      if (!database.objectStoreNames.contains(LEGACY_STORE_NAME)) {
-        database.close();
-        resolve(null);
-        return;
-      }
-      resolve(database);
-    };
-  });
-}
-
-async function readLegacyDatabase(): Promise<unknown[]> {
-  const database = await openExistingLegacyDatabase();
-  if (!database) return [];
-
-  return new Promise((resolve, reject) => {
-    const transaction = database.transaction(LEGACY_STORE_NAME, "readonly");
-    const request = transaction.objectStore(LEGACY_STORE_NAME).getAll();
-    let records: unknown[] = [];
-    request.onsuccess = () => { records = request.result as unknown[]; };
-    request.onerror = () => reject(request.error ?? new Error("Could not read legacy browser CRM records."));
-    transaction.oncomplete = () => {
-      database.close();
-      resolve(records);
-    };
-    transaction.onabort = () => {
-      database.close();
-      reject(transaction.error ?? new Error("Legacy CRM read was interrupted."));
-    };
-  });
-}
-
-function normalizeLead(value: unknown, rowIndex: number): Omit<Lead, "id"> & { id?: number } {
-  if (!value || typeof value !== "object" || Array.isArray(value)) {
-    throw new Error("Backup contains an invalid lead record.");
-  }
-  const row = value as Record<string, unknown>;
-  const idValue = Number(row.id);
-  const createdAt = textValue(
-    row.createdAt ?? row.created_at,
-    Number.isSafeInteger(idValue) && idValue > 0 ? `legacy-${idValue}` : `legacy-import-${rowIndex}`,
-  );
-  const sourceValue = textValue(row.source);
-  const statusValue = textValue(row.status);
-  const teamValue = textValue(row.team);
-  const sources: LeadSource[] = ["Website Form", "WhatsApp", "Meta Ad", "Walk-in"];
-  const statuses: LeadStatus[] = ["New", "Contacted", "Visit Scheduled", "In Progress", "Converted", "Lost"];
-  let noteValues: unknown[] = Array.isArray(row.notes) ? row.notes : [];
-  if (typeof row.notes === "string" && row.notes.trim()) {
-    try {
-      const parsed: unknown = JSON.parse(row.notes);
-      if (Array.isArray(parsed)) noteValues = parsed;
-    } catch {
-      noteValues = [{ text: row.notes, author: "Imported", timestamp: "" }];
-    }
-  }
-
-  const notes = noteValues.map((note) => {
-    const item = note && typeof note === "object" ? note as Record<string, unknown> : {};
-    return {
-      timestamp: textValue(item.timestamp ?? item.created_at),
-      author: textValue(item.author, "Imported"),
-      text: textValue(item.text ?? item.content),
-    };
-  });
-  const costValue = row.estimatedCost ?? row.estimated_cost;
-
-  return {
-    ...(Number.isSafeInteger(idValue) && idValue > 0 ? { id: idValue } : {}),
-    name: textValue(row.name, "Unknown"),
-    phone: textValue(row.phone ?? row.phone_number ?? row.phoneNumber ?? row.mobile),
-    device: textValue(row.device ?? row.device_model ?? row.deviceModel, "Unspecified"),
-    issue: textValue(row.issue, "Diagnostic Requested"),
-    source: sources.includes(sourceValue as LeadSource) ? sourceValue as LeadSource : "Website Form",
-    status: statuses.includes(statusValue as LeadStatus) ? statusValue as LeadStatus : statusValue === "Paid" ? "Converted" : "New",
-    team: teamValue === "Team 2 (Rayyan)" ? "Team 2 (Rayyan)" : "Team 1 (Prajwal)",
-    ...(textValue(row.visitDate ?? row.visit_date) ? { visitDate: textValue(row.visitDate ?? row.visit_date) } : {}),
-    ...(textValue(row.followUpReminder ?? row.follow_up_reminder) ? { followUpReminder: textValue(row.followUpReminder ?? row.follow_up_reminder) } : {}),
-    notes,
-    ...(costValue !== null && costValue !== undefined && costValue !== "" && Number.isFinite(Number(costValue))
-      ? { estimatedCost: Number(costValue) }
-      : {}),
-    createdAt,
-  };
-}
-
-function leadIdentity(lead: Omit<Lead, "id"> & { id?: number }): string {
-  return [lead.id ?? "", lead.phone, lead.createdAt, lead.name].join("|").toLowerCase();
-}
-
-async function initializeSession(): Promise<void> {
-  if (!initializePromise) {
-    initializePromise = (async () => {
-      const oldRecords = await readLegacyDatabase();
-      const identities = new Set<string>();
-      sessionLeads = [];
-      for (const [index, row] of oldRecords.entries()) {
-        const normalized = normalizeLead(row, index);
-        const identity = leadIdentity(normalized);
-        if (identities.has(identity)) continue;
-        const id = normalized.id && !sessionLeads.some((lead) => lead.id === normalized.id)
-          ? normalized.id
-          : nextId;
-        nextId = Math.max(nextId, id + 1);
-        sessionLeads.push({ ...normalized, id, importKey: identity });
-        identities.add(identity);
-      }
-      nextId = Math.max(nextId, ...sessionLeads.map((lead) => lead.id + 1), 1);
-    })().catch((error) => {
-      initializePromise = undefined;
-      throw error;
-    });
-  }
-  await initializePromise;
-}
-
-export async function listLocalLeads(): Promise<Lead[]> {
-  await initializeSession();
-  return [...(sessionLeads ?? [])].sort((left, right) => right.id - left.id);
-}
-
-export async function createLocalLead(input: NewLead): Promise<Lead> {
-  await initializeSession();
-  const lead: Lead = {
-    ...input,
-    id: nextId++,
-    createdAt: input.createdAt ?? new Date().toISOString(),
-  };
-  sessionLeads!.push(lead);
-  notifyLeadsChanged();
-  return lead;
-}
-
-export async function updateLocalLead(id: number, changes: Partial<Lead>): Promise<Lead> {
-  await initializeSession();
-  const index = sessionLeads!.findIndex((lead) => lead.id === id);
-  if (index < 0) throw new Error("This lead is not in the current session. Reload legacy records or import a backup.");
-  const updated = { ...sessionLeads![index], ...changes, id };
-  sessionLeads![index] = updated;
-  notifyLeadsChanged();
-  return updated;
 }
 
 function parseCsv(text: string): Record<string, string>[] {
@@ -254,10 +124,61 @@ function parseCsv(text: string): Record<string, string>[] {
   );
 }
 
-export async function importLocalLeads(content: string): Promise<{ imported: number; skipped: number }> {
-  if (new Blob([content]).size > MAX_IMPORT_BYTES) throw new Error("Import file exceeds the 20 MB limit.");
-  await initializeSession();
+function normalizeLead(value: unknown, rowIndex: number): Omit<Lead, "id"> & { id?: number } {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw new Error("Backup contains an invalid lead record.");
+  }
+  const row = value as Record<string, unknown>;
+  const id = Number(row.id);
+  const createdAt = textValue(row.createdAt ?? row.created_at ?? row["Created At (ISO)"], `legacy-import-${rowIndex}`);
+  const source = textValue(row.source);
+  const status = textValue(row.status);
+  const team = textValue(row.team ?? row["Assigned Team"]);
+  let noteValues: unknown[] = Array.isArray(row.notes) ? row.notes : [];
+  if (typeof row.notes === "string" && row.notes.trim()) {
+    try {
+      const parsed: unknown = JSON.parse(row.notes);
+      if (Array.isArray(parsed)) noteValues = parsed;
+      else noteValues = [{ text: row.notes, author: "Imported", timestamp: "" }];
+    } catch {
+      noteValues = [{ text: row.notes, author: "Imported", timestamp: "" }];
+    }
+  }
+  if (typeof row["Conversation Notes"] === "string" && row["Conversation Notes"].trim()) {
+    noteValues = row["Conversation Notes"].split("\n").map((line) => ({ text: line, author: "Imported", timestamp: "" }));
+  }
+  const notes = noteValues.map((note) => {
+    const item = note && typeof note === "object" ? note as Record<string, unknown> : {};
+    return {
+      timestamp: textValue(item.timestamp ?? item.created_at),
+      author: textValue(item.author, "Imported"),
+      text: textValue(item.text ?? item.content),
+    };
+  });
+  const cost = row.estimatedCost ?? row.estimated_cost ?? row["Estimated Cost (INR)"];
+  const identity = [Number.isSafeInteger(id) ? id : "", row.phone ?? row.mobile ?? "", createdAt, row.name ?? row["Customer Name"] ?? ""].join("|").toLowerCase();
 
+  return {
+    ...(Number.isSafeInteger(id) && id > 0 ? { id } : {}),
+    name: textValue(row.name ?? row["Customer Name"], "Unknown"),
+    phone: textValue(row.phone ?? row.phone_number ?? row.phoneNumber ?? row.mobile ?? row.Phone),
+    device: textValue(row.device ?? row.device_model ?? row.deviceModel ?? row.Device, "Unspecified"),
+    issue: textValue(row.issue ?? row.Issue, "Diagnostic Requested"),
+    source: (["Website Form", "WhatsApp", "Meta Ad", "Walk-in"].includes(source) ? source : "Website Form") as LeadSource,
+    status: (status === "Paid" ? "Converted" : (["New", "Contacted", "Visit Scheduled", "In Progress", "Converted", "Lost"].includes(status) ? status : "New")) as LeadStatus,
+    team: (team === "Team 1 (Prajwal)" || team === "Team 2 (Rayyan)" ? team : "Team 1 (Prajwal)") as LeadTeam,
+    notes,
+    createdAt,
+    importKey: identity,
+    ...(textValue(row.visitDate ?? row.visit_date ?? row["Visit Date"]) ? { visitDate: textValue(row.visitDate ?? row.visit_date ?? row["Visit Date"]) } : {}),
+    ...(textValue(row.followUpReminder ?? row.follow_up_reminder ?? row["Follow-up Reminder"]) ? { followUpReminder: textValue(row.followUpReminder ?? row.follow_up_reminder ?? row["Follow-up Reminder"]) } : {}),
+    ...(cost !== null && cost !== undefined && cost !== "" && Number.isFinite(Number(cost)) ? { estimatedCost: Number(cost) } : {}),
+    ...(textValue(row.pincode ?? row.Pincode) ? { pincode: textValue(row.pincode ?? row.Pincode) } : {}),
+  };
+}
+
+export async function importLocalLeads(content: string): Promise<{ imported: number; skipped: number }> {
+  if (new Blob([content]).size > 20 * 1024 * 1024) throw new Error("Import file exceeds the 20 MB limit.");
   let parsed: unknown;
   try {
     parsed = JSON.parse(content);
@@ -269,29 +190,18 @@ export async function importLocalLeads(content: string): Promise<{ imported: num
     : parsed && typeof parsed === "object" && Array.isArray((parsed as { leads?: unknown }).leads)
       ? (parsed as { leads: unknown[] }).leads
       : null;
-  if (!rows) throw new Error("Import must contain a leads array or a CSV header and rows.");
-  if (rows.length > 50000) throw new Error("Import contains too many leads.");
-
-  const identities = new Set(sessionLeads!.map((lead) => lead.importKey || leadIdentity(lead)));
+  if (!rows || rows.length > 1000) throw new Error("Import must contain a leads array or CSV with at most 1,000 rows.");
+  const leads = rows.map((row, index) => normalizeLead(row, index));
   let imported = 0;
   let skipped = 0;
-  for (const [index, row] of rows.entries()) {
-    const normalized = normalizeLead(row, index);
-    const identity = leadIdentity(normalized);
-    if (identities.has(identity)) {
-      skipped += 1;
-      continue;
-    }
-
-    const id = normalized.id && !sessionLeads!.some((lead) => lead.id === normalized.id)
-      ? normalized.id
-      : nextId;
-    nextId = Math.max(nextId, id + 1);
-    sessionLeads!.push({ ...normalized, id, importKey: identity });
-    identities.add(identity);
-    imported += 1;
+  for (let index = 0; index < leads.length; index += 250) {
+    const result = await apiRequest<{ imported: number; skipped: number }>("/api/track-lead", {
+      method: "POST",
+      body: JSON.stringify({ action: "import", payload: leads.slice(index, index + 250) }),
+    });
+    imported += result.imported;
+    skipped += result.skipped;
   }
-  if (imported) notifyLeadsChanged();
   return { imported, skipped };
 }
 
@@ -302,8 +212,8 @@ function csvCell(value: unknown): string {
 }
 
 export async function exportTeamLeadsCsv(team: LeadTeam): Promise<{ csv: string; leadIds: number[]; count: number }> {
-  await initializeSession();
-  const teamLeads = sessionLeads!.filter((lead) => lead.team === team).sort((left, right) => left.id - right.id);
+  const allLeads = await listLocalLeads();
+  const teamLeads = allLeads.filter((lead) => lead.team === team).sort((left, right) => left.id - right.id);
   const columns: Array<[string, (lead: Lead) => unknown]> = [
     ["Lead ID", (lead) => lead.id],
     ["Created At (ISO)", (lead) => lead.createdAt],
@@ -323,47 +233,17 @@ export async function exportTeamLeadsCsv(team: LeadTeam): Promise<{ csv: string;
     columns.map(([title]) => csvCell(title)).join(","),
     ...teamLeads.map((lead) => columns.map(([, getValue]) => csvCell(getValue(lead))).join(",")),
   ];
-  return {
-    csv: `\uFEFF${rows.join("\r\n")}`,
-    leadIds: teamLeads.map((lead) => lead.id),
-    count: teamLeads.length,
-  };
+  return { csv: `\uFEFF${rows.join("\r\n")}`, leadIds: teamLeads.map((lead) => lead.id), count: teamLeads.length };
 }
 
 export async function clearExportedTeamLeads(team: LeadTeam, exportedIds: number[]): Promise<number> {
-  await initializeSession();
-  const ids = new Set(exportedIds);
-  const legacyDatabase = await openExistingLegacyDatabase();
-  if (legacyDatabase) {
-    await new Promise<void>((resolve, reject) => {
-      const transaction = legacyDatabase.transaction(LEGACY_STORE_NAME, "readwrite");
-      const store = transaction.objectStore(LEGACY_STORE_NAME);
-      const request = store.getAll();
-      request.onsuccess = () => {
-        for (const value of request.result as unknown[]) {
-          const normalized = normalizeLead(value, 0);
-          if (normalized.team === team && normalized.id && ids.has(normalized.id)) {
-            store.delete(normalized.id);
-          }
-        }
-      };
-      request.onerror = () => transaction.abort();
-      transaction.oncomplete = () => { legacyDatabase.close(); resolve(); };
-      transaction.onabort = () => {
-        legacyDatabase.close();
-        reject(transaction.error ?? new Error("Could not clear exported legacy leads."));
-      };
+  let deleted = 0;
+  for (let index = 0; index < exportedIds.length; index += 500) {
+    const result = await apiRequest<{ deleted: number }>("/api/clear-leads", {
+      method: "POST",
+      body: JSON.stringify({ team, ids: exportedIds.slice(index, index + 500) }),
     });
+    deleted += result.deleted;
   }
-
-  const before = sessionLeads!.length;
-  sessionLeads = sessionLeads!.filter((lead) => !(lead.team === team && ids.has(lead.id)));
-  const removed = before - sessionLeads.length;
-  if (removed) notifyLeadsChanged();
-  return removed;
-}
-
-export function subscribeToLocalLeadChanges(onChange: () => void): () => void {
-  window.addEventListener("ifixspot:leads-changed", onChange);
-  return () => window.removeEventListener("ifixspot:leads-changed", onChange);
+  return deleted;
 }

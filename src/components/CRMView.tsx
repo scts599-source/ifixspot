@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { 
   Phone, MessageSquare, Plus, Search, Calendar, 
-  Clock, AlertCircle, ChevronRight, X, 
+  Clock, AlertCircle, X,
   LogOut, Send, ArrowLeftRight, Download, Upload, Trash2
 } from 'lucide-react';
 import {
@@ -10,7 +10,6 @@ import {
   exportTeamLeadsCsv,
   importLocalLeads,
   listLocalLeads,
-  subscribeToLocalLeadChanges,
   updateLocalLead,
   type Lead,
   type LeadStatus,
@@ -43,7 +42,7 @@ export default function CRMView({ onLogout }: CRMViewProps) {
       setLeads(await listLocalLeads());
       setStorageError('');
     } catch (error) {
-      setStorageError(error instanceof Error ? error.message : 'Could not read local CRM data.');
+      setStorageError(error instanceof Error ? error.message : 'Could not load CRM data.');
     } finally {
       setIsLoading(false);
     }
@@ -51,11 +50,11 @@ export default function CRMView({ onLogout }: CRMViewProps) {
 
   useEffect(() => {
     void fetchLeads();
-    const unsubscribe = subscribeToLocalLeadChanges(() => void fetchLeads());
     const handleFocus = () => void fetchLeads();
+    const interval = window.setInterval(() => void fetchLeads(), 10000);
     window.addEventListener('focus', handleFocus);
     return () => {
-      unsubscribe();
+      window.clearInterval(interval);
       window.removeEventListener('focus', handleFocus);
     };
   }, []);
@@ -192,7 +191,7 @@ export default function CRMView({ onLogout }: CRMViewProps) {
       setIsAddModalOpen(false);
       setNewLeadForm({ name: '', phone: '', device: '', issue: '', source: 'WhatsApp', estimatedCost: '' });
     } catch (error) {
-      setStorageError(error instanceof Error ? error.message : 'Could not save this lead locally.');
+      setStorageError(error instanceof Error ? error.message : 'Could not save this lead to the CRM.');
     }
   };
 
@@ -293,8 +292,8 @@ export default function CRMView({ onLogout }: CRMViewProps) {
         </div>
       </header>
 
-      <div className="border-b border-amber-500/20 bg-amber-500/5 px-4 py-2 text-xs text-amber-100/80">
-        Leads are held in this tab's memory, not browser storage. A refresh or closing this tab clears new, unexported leads. Download and confirm a separate daily CSV for each team. Existing legacy browser records are loaded for migration; imported CSV/JSON files merge without overwriting. Website inquiries go to the business inbox and do not sync into this CRM automatically.
+      <div className="border-b border-emerald-500/20 bg-emerald-500/5 px-4 py-2 text-xs text-emerald-100/80">
+        Leads are saved to the shared CRM and remain available after refresh or on other devices. Website bookings are added automatically. Download a separate daily CSV for each team; confirm only after saving the file to clear the exported rows.
       </div>
       {pendingClear && (
         <div role="alertdialog" aria-label="Confirm clearing exported leads" className="border-b border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
@@ -559,7 +558,7 @@ export default function CRMView({ onLogout }: CRMViewProps) {
                 <textarea rows={2} value={newLeadForm.issue} onChange={e => setNewLeadForm({ ...newLeadForm, issue: e.target.value })} className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2.5 text-xs text-white" />
               </div>
               <button type="submit" className="w-full py-3.5 rounded-xl bg-cyan-500 text-black font-bold text-xs shadow-lg active:scale-[0.98]">
-                Save Lead Locally
+                Save to CRM
               </button>
             </form>
           </div>
