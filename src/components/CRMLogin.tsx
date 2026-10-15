@@ -84,7 +84,7 @@ export default function CRMLogin({ onLoginSuccess }: CRMLoginProps) {
 
         <div className="mt-8 pt-6 border-t border-zinc-800/80 flex items-center justify-center gap-2 text-xs text-zinc-500">
           <ShieldCheck className="w-4 h-4 text-emerald-500" />
-          <span>Encrypted Session • Authorized Personnel Only</span>
+          <span>Local browser access • Data is not encrypted at rest</span>
         </div>
       </div>
     </div>

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Routes, Route, Link, useLocation } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
@@ -14,7 +14,6 @@ import PrivacyPolicy from "@/pages/PrivacyPolicy";
 import TermsOfService from "@/pages/TermsOfService";
 import RefundPolicy from "@/pages/RefundPolicy";
 import AIFAQ from "@/components/AIFAQ";
-import { Analytics } from "@vercel/analytics/next";
 
 // Import your new CRM components
 import CRMView from "@/components/CRMView";

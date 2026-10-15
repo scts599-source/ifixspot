@@ -1,25 +1,19 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { 
   Phone, MessageSquare, Plus, Search, Calendar, 
   Clock, AlertCircle, ChevronRight, X, 
-  LogOut, Send, ArrowLeftRight
+  LogOut, Send, ArrowLeftRight, Download, Upload
 } from 'lucide-react';
-
-export interface Lead {
-  id: number;
-  name: string;
-  phone: string;
-  device: string;
-  issue: string;
-  source: 'Website Form' | 'WhatsApp' | 'Meta Ad' | 'Walk-in';
-  status: 'New' | 'Contacted' | 'Visit Scheduled' | 'In Progress' | 'Converted' | 'Lost';
-  team: 'Team 1 (Prajwal)' | 'Team 2 (Rayyan)';
-  visitDate?: string;
-  followUpReminder?: string;
-  notes: Array<{ timestamp: string; author: string; text: string }>;
-  estimatedCost?: number;
-  createdAt: string;
-}
+import {
+  createLocalLead,
+  exportLocalLeads,
+  importLocalLeads,
+  listLocalLeads,
+  subscribeToLocalLeadChanges,
+  updateLocalLead,
+  type Lead,
+  type LeadStatus,
+} from '@/lib/crmStore';
 
 interface CRMViewProps {
   onLogout: () => void;
@@ -33,6 +27,10 @@ export default function CRMView({ onLogout }: CRMViewProps) {
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [newNoteText, setNewNoteText] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [storageError, setStorageError] = useState('');
+  const [backupMessage, setBackupMessage] = useState('');
+  const importInputRef = useRef<HTMLInputElement>(null);
 
   const [newLeadForm, setNewLeadForm] = useState({
     name: '', phone: '', device: '', issue: '', source: 'WhatsApp' as Lead['source'], estimatedCost: ''
@@ -40,33 +38,66 @@ export default function CRMView({ onLogout }: CRMViewProps) {
 
   const fetchLeads = async () => {
     try {
-      const res = await fetch('/api/get-leads');
-      if (res.ok) {
-        const data = await res.json();
-        const sortedLeads = (data.leads || []).sort((a: Lead, b: Lead) => b.id - a.id);
-        setLeads(sortedLeads);
-      }
-    } catch (err) {
-      console.error("Failed to fetch leads");
+      setLeads(await listLocalLeads());
+      setStorageError('');
+    } catch (error) {
+      setStorageError(error instanceof Error ? error.message : 'Could not read local CRM data.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchLeads();
-    const interval = setInterval(fetchLeads, 3000);
-    return () => clearInterval(interval);
+    void fetchLeads();
+    const unsubscribe = subscribeToLocalLeadChanges(() => void fetchLeads());
+    const handleFocus = () => void fetchLeads();
+    window.addEventListener('focus', handleFocus);
+    return () => {
+      unsubscribe();
+      window.removeEventListener('focus', handleFocus);
+    };
   }, []);
 
   const updateLeadInDb = async (leadId: number, payload: Partial<Lead>) => {
     try {
-      await fetch('/api/track-lead', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: leadId, action: 'update', payload })
-      });
-      fetchLeads();
-    } catch (err) {
-      console.error("Failed to update lead");
+      const updatedLead = await updateLocalLead(leadId, payload);
+      setLeads((current) => current.map((lead) => lead.id === leadId ? updatedLead : lead));
+      setStorageError('');
+      return updatedLead;
+    } catch (error) {
+      setStorageError(error instanceof Error ? error.message : 'Could not update this lead.');
+      return null;
+    }
+  };
+
+  const handleExportBackup = async () => {
+    try {
+      const backup = await exportLocalLeads();
+      const url = URL.createObjectURL(new Blob([backup], { type: 'application/json' }));
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `ifixspot-crm-backup-${new Date().toISOString().slice(0, 10)}.json`;
+      link.click();
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+      setBackupMessage('Backup downloaded. Store it somewhere separate from this device.');
+      setStorageError('');
+    } catch (error) {
+      setStorageError(error instanceof Error ? error.message : 'Could not export CRM data.');
+    }
+  };
+
+  const handleImportBackup = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    try {
+      const result = await importLocalLeads(await file.text());
+      setBackupMessage(`Imported ${result.imported} lead(s); skipped ${result.skipped} duplicate(s). Existing records were not overwritten.`);
+      setStorageError('');
+      await fetchLeads();
+    } catch (error) {
+      setStorageError(error instanceof Error ? error.message : 'Could not import this backup.');
+    } finally {
+      event.target.value = '';
     }
   };
 
@@ -121,9 +152,9 @@ export default function CRMView({ onLogout }: CRMViewProps) {
       device: newLeadForm.device || 'Unspecified',
       issue: newLeadForm.issue || 'Diagnostic Required',
       source: newLeadForm.source,
-      status: 'New',
+      status: 'New' as const,
       team: activeTeam,
-      estimatedCost: newLeadForm.estimatedCost ? Number(newLeadForm.estimatedCost) : null,
+      ...(newLeadForm.estimatedCost ? { estimatedCost: Number(newLeadForm.estimatedCost) } : {}),
       notes: [{
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         author: activeTeam.split(' ')[1].replace(/[()]/g, ''),
@@ -132,20 +163,17 @@ export default function CRMView({ onLogout }: CRMViewProps) {
     };
 
     try {
-      await fetch('/api/track-lead', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'create', payload: newEntry })
-      });
-      fetchLeads();
+      const createdLead = await createLocalLead(newEntry);
+      setLeads((current) => [createdLead, ...current]);
+      setStorageError('');
       setIsAddModalOpen(false);
       setNewLeadForm({ name: '', phone: '', device: '', issue: '', source: 'WhatsApp', estimatedCost: '' });
-    } catch (err) {
-      console.error(err);
+    } catch (error) {
+      setStorageError(error instanceof Error ? error.message : 'Could not save this lead locally.');
     }
   };
 
-  const handleUpdateStatus = (id: number, newStatus: Lead['status']) => {
+  const handleUpdateStatus = async (id: number, newStatus: LeadStatus) => {
     const targetLead = leads.find(l => l.id === id);
     if (!targetLead) return;
 
@@ -155,13 +183,13 @@ export default function CRMView({ onLogout }: CRMViewProps) {
       text: `Status updated to [${newStatus}]`
     }];
 
-    updateLeadInDb(id, { status: newStatus, notes: updatedNotes });
-    if (selectedLead && selectedLead.id === id) {
-      setSelectedLead({ ...selectedLead, status: newStatus, notes: updatedNotes });
+    const updatedLead = await updateLeadInDb(id, { status: newStatus, notes: updatedNotes });
+    if (updatedLead && selectedLead?.id === id) {
+      setSelectedLead(updatedLead);
     }
   };
 
-  const handleAddNote = (id: number) => {
+  const handleAddNote = async (id: number) => {
     if (!newNoteText.trim() || !selectedLead) return;
     
     const newNote = {
@@ -171,12 +199,14 @@ export default function CRMView({ onLogout }: CRMViewProps) {
     };
 
     const updatedNotes = [...(selectedLead.notes || []), newNote];
-    updateLeadInDb(id, { notes: updatedNotes });
-    setSelectedLead({ ...selectedLead, notes: updatedNotes });
-    setNewNoteText('');
+    const updatedLead = await updateLeadInDb(id, { notes: updatedNotes });
+    if (updatedLead) {
+      setSelectedLead(updatedLead);
+      setNewNoteText('');
+    }
   };
 
-  const handleSaveVisitDetails = (id: number, visitDate: string, reminderDate: string) => {
+  const handleSaveVisitDetails = async (id: number, visitDate: string, reminderDate: string) => {
     const targetLead = leads.find(l => l.id === id);
     if (!targetLead) return;
 
@@ -187,16 +217,16 @@ export default function CRMView({ onLogout }: CRMViewProps) {
       text: `Scheduled visit: ${visitDate || 'N/A'}. Reminder: ${reminderDate || 'N/A'}.`
     }];
 
-    updateLeadInDb(id, {
+    const updatedLead = await updateLeadInDb(id, {
       visitDate: visitDate || targetLead.visitDate,
       followUpReminder: reminderDate || targetLead.followUpReminder,
       status: newStatus,
       notes: updatedNotes
     });
-    setSelectedLead(null);
+    if (updatedLead) setSelectedLead(null);
   };
 
-  const handleTransferLead = (id: number, currentTeam: string) => {
+  const handleTransferLead = async (id: number, currentTeam: string) => {
     const targetTeam = currentTeam === 'Team 1 (Prajwal)' ? 'Team 2 (Rayyan)' : 'Team 1 (Prajwal)';
     const targetLead = leads.find(l => l.id === id);
     if (!targetLead) return;
@@ -207,8 +237,8 @@ export default function CRMView({ onLogout }: CRMViewProps) {
       text: `Lead transferred to ${targetTeam}.`
     }];
 
-    updateLeadInDb(id, { team: targetTeam, notes: updatedNotes });
-    setSelectedLead(null);
+    const updatedLead = await updateLeadInDb(id, { team: targetTeam, notes: updatedNotes });
+    if (updatedLead) setSelectedLead(null);
   };
 
   return (
@@ -226,10 +256,33 @@ export default function CRMView({ onLogout }: CRMViewProps) {
           </select>
         </div>
 
-        <button onClick={onLogout} title="Log Out" className="p-1.5 text-zinc-400 hover:text-white rounded-lg bg-zinc-800/60 border border-zinc-700/60">
-          <LogOut className="w-4 h-4" />
-        </button>
+        <div className="flex items-center gap-2">
+          <button onClick={() => void handleExportBackup()} title="Download local CRM backup" aria-label="Download local CRM backup" className="p-2 text-zinc-300 hover:text-white rounded-lg bg-zinc-800/60 border border-zinc-700/60">
+            <Download className="w-4 h-4" />
+          </button>
+          <button onClick={() => importInputRef.current?.click()} title="Import backup without overwriting existing records" aria-label="Import CRM backup" className="p-2 text-zinc-300 hover:text-white rounded-lg bg-zinc-800/60 border border-zinc-700/60">
+            <Upload className="w-4 h-4" />
+          </button>
+          <input ref={importInputRef} type="file" accept=".json,.csv,application/json,text/csv" onChange={handleImportBackup} className="hidden" />
+          <button onClick={onLogout} title="Log Out" className="p-1.5 text-zinc-400 hover:text-white rounded-lg bg-zinc-800/60 border border-zinc-700/60">
+            <LogOut className="w-4 h-4" />
+          </button>
+        </div>
       </header>
+
+      <div className="border-b border-amber-500/20 bg-amber-500/5 px-4 py-2 text-xs text-amber-100/80">
+        Leads are stored only in this browser profile and are not encrypted at rest. Keep this device private and store downloaded backups securely. Download backups regularly. Existing remote records are untouched; export them as CSV/JSON and import here to merge without overwriting. New website inquiries go to the business inbox and do not sync into this local CRM automatically.
+      </div>
+      {storageError && (
+        <div role="alert" className="border-b border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+          {storageError} <button onClick={() => void fetchLeads()} className="ml-2 font-semibold underline">Retry</button>
+        </div>
+      )}
+      {backupMessage && (
+        <div role="status" className="border-b border-emerald-500/20 bg-emerald-500/5 px-4 py-2 text-xs text-emerald-200">
+          {backupMessage}
+        </div>
+      )}
 
       {dueReminders.length > 0 && (
         <div className="bg-gradient-to-r from-amber-500/20 to-orange-500/20 border-b border-amber-500/40 px-4 py-2.5 flex items-center justify-between text-xs text-amber-200">
@@ -276,7 +329,9 @@ export default function CRMView({ onLogout }: CRMViewProps) {
       </section>
 
       <div className="flex-1 p-4 space-y-3 pb-24 overflow-y-auto">
-        {filteredLeads.length === 0 ? (
+        {isLoading ? (
+          <div className="text-center py-16 text-zinc-500 text-sm">Loading local CRM data…</div>
+        ) : filteredLeads.length === 0 ? (
           <div className="text-center py-16 text-zinc-500 text-sm">No leads in this view.</div>
         ) : (
           filteredLeads.map(lead => {
@@ -468,7 +523,7 @@ export default function CRMView({ onLogout }: CRMViewProps) {
                 <textarea rows={2} value={newLeadForm.issue} onChange={e => setNewLeadForm({ ...newLeadForm, issue: e.target.value })} className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2.5 text-xs text-white" />
               </div>
               <button type="submit" className="w-full py-3.5 rounded-xl bg-cyan-500 text-black font-bold text-xs shadow-lg active:scale-[0.98]">
-                Save to Database
+                Save Lead Locally
               </button>
             </form>
           </div>

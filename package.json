@@ -9,31 +9,25 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.116.0",
-    "@types/react-router-dom": "^5.3.3",
-    "@vercel/analytics": "^2.0.1",
     "clsx": "2.1.1",
-    "eslint": "^10.8.0",
     "framer-motion": "^12.40.0",
     "lucide-react": "^1.21.0",
-    "prettier": "^3.9.6",
     "react": "19.2.6",
     "react-dom": "19.2.6",
     "react-router-dom": "^7.18.1",
-    "tailwind-merge": "3.4.0",
-    "vitest": "^4.1.10"
+    "tailwind-merge": "3.4.0"
   },
   "devDependencies": {
     "@tailwindcss/vite": "4.1.17",
     "@types/node": "22.19.17",
     "@types/react": "19.2.7",
     "@types/react-dom": "19.2.3",
-    "@vercel/node": "^16.0.1",
     "@vitejs/plugin-react": "5.1.1",
+    "eslint": "^10.12.0",
+    "prettier": "^3.9.10",
     "tailwindcss": "4.1.17",
     "typescript": "5.9.3",
     "vite": "^7.3.6",
-    "vite-plugin-singlefile": "2.3.0",
-    "vite-plugin-sitemap": "^0.8.2"
+    "vitest": "^5.0.5"
   }
 }

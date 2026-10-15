@@ -98,25 +98,26 @@ export default function Hero() {
     setIsSubmitting(true);
 
     try {
-      // 1. Send data to Vercel Serverless Function (Supabase CRM + Meta CAPI)
-      const response = await fetch("/api/track-lead", {
+      const response = await fetch("https://formspree.io/f/moeqrpwg", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({
-          phoneNumber: mobile,
-          deviceModel: device,
+          mobile,
+          device,
           issue: issue,
+          pincode,
+          source: "Hero Booking Form",
           sourceUrl: window.location.href,
         }),
       });
 
-      const data = await response.json();
-
       if (response.ok) {
         setReserved(true);
 
-        // 2. Fire Browser Meta Pixel using the exact Database ID for Deduplication
-        if (typeof window !== "undefined" && (window as unknown as { fbq?: (...args: unknown[]) => void }).fbq && data.lead_id) {
+        if (typeof window !== "undefined" && (window as unknown as { fbq?: (...args: unknown[]) => void }).fbq) {
           (window as unknown as { fbq: (...args: unknown[]) => void }).fbq(
             "track",
             "Lead",
@@ -126,12 +127,11 @@ export default function Hero() {
               value: 1.0,
               currency: "INR",
               status: issue
-            },
-            { eventID: data.lead_id }
+            }
           );
         }
       } else {
-        console.error("API Error:", data);
+        console.error("Formspree submission failed:", response.status);
         alert("Something went wrong processing your request. Please try again.");
       }
     } catch (error) {

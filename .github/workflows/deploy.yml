@@ -32,6 +32,8 @@ jobs:
         run: npm ci
       - name: Build
         run: npm run build
+        env:
+          GITHUB_PAGES: "true"
       - name: Enable SPA routes on GitHub Pages
         run: cp dist/index.html dist/404.html
       - name: Setup Pages
